@@ -1,11 +1,11 @@
 {
     "enablers": [
         {
-            "name": "Apinf",
+            "name": "APInf",
             "image": "apinf/platform"
         },
         {
-            "name": "AuthzForce",
+            "name": "AuthZForce",
             "image": "fiware/authzforce-ce-server"
         },
         {
@@ -13,16 +13,20 @@
             "image": "fiware/business-api-ecosystem"
         },
         {
-            "name": "Business Ecosystem Charging Backend",
+            "name": "Business API Ecosystem - Charging Backend",
             "image": "conwetlab/biz-ecosystem-charging-backend"
         },
         {
-            "name": "Business Ecosystem Logic Proxy",
+            "name": "Business API Ecosystem - Customer Management",
             "image": "conwetlab/biz-ecosystem-logic-proxy"
         },
         {
-            "name": "Business Ecosystem RSS",
+            "name": "Business API Ecosystem - RSS",
             "image": "conwetlab/biz-ecosystem-rss"
+        },
+        {
+            "name": "Cygnus",
+            "image": "fiware/cygnus-ngsi"
         },
         {
             "name": "Domibus",
@@ -45,7 +49,7 @@
             "image": "fogflow/broker"
         },
         {
-            "name": "FogFlow - Connectedcar",
+            "name": "FogFlow - Connected Car",
             "image": "fogflow/connectedcar"
         },
         {
@@ -65,11 +69,11 @@
             "image": "fogflow/dummy"
         },
         {
-            "name": "FogFlow - Facecounter",
+            "name": "FogFlow - Face Counter",
             "image": "fogflow/facecounter"
         },
         {
-            "name": "FogFlow - Facefinder",
+            "name": "FogFlow - Face Finder",
             "image": "fogflow/facefinder"
         },
         {
@@ -77,15 +81,15 @@
             "image": "fogflow/master"
         },
         {
-            "name": "FogFlow - NodeJs",
+            "name": "FogFlow - Node.js",
             "image": "fogflow/nodejs"
         },
         {
-            "name": "FogFlow - Privatesite",
+            "name": "FogFlow - Private Site",
             "image": "fogflow/privatesite"
         },
         {
-            "name": "FogFlow - Publicsite",
+            "name": "FogFlow - Public Site",
             "image": "fogflow/publicsite"
         },
         {
@@ -105,6 +109,30 @@
             "image": "idraopendata/idra"
         },
         {
+            "name": "IoT Agent for JSON",
+            "image": "fiware/iotagent-json"
+        },
+        {
+            "name": "IoT Agent for Lightweight M2M",
+            "image": "fiware/lightweightm2m-iotagent"
+        },
+        {
+            "name": "IoT Agent for LoRaWan",
+            "image": "fiware/iotagent-lorawan"
+        },
+        {
+            "name": "IoT Agent for OPC UA",
+            "image": "rdlabengpa/opcuaage"
+        },
+        {
+            "name": "IoT Agent for SigFox",
+            "image": "fiware/sigfox-iotagent"
+        },
+        {
+            "name": "IoT Agent for Ultralight",
+            "image": "fiware/iotagent-ul"
+        },
+        {
             "name": "Keyrock",
             "image": "fiware/idm"
         },
@@ -117,64 +145,60 @@
             "image": "fiware/stream-oriented-kurento"
         },
         {
-            "name": "NGSI agent for Cygnus",
-            "image": "fiware/cygnus-ngsi"
-        },
-        {
-            "name": "OpenMTC - AMD64 - Backend",
+            "name": "OpenMTC - Backend for AMD64",
             "image": "openmtc/backend-amd64"
         },
         {
-            "name": "OpenMTC - AMD64 - CSV-Injector APP",
-            "image": "openmtc/csv-injector-app-amd64"
-        },
-        {
-            "name": "OpenMTC - AMD64 - Cul868 Ipe",
-            "image": "openmtc/cul868-ipe-amd64"
-        },
-        {
-            "name": "OpenMTC - AMD64 - Gateway",
-            "image": "openmtc/gateway-amd64"
-        },
-        {
-            "name": "OpenMTC - AMD64 - InfluxDB App",
-            "image": "openmtc/influxdb-app-amd64"
-        },
-        {
-            "name": "OpenMTC - AMD64 - MQTT-Connector APP",
-            "image": "openmtc/mqtt-connector-app-amd64"
-        },
-        {
-            "name": "OpenMTC - AMD64 - Orion CB App",
-            "image": "openmtc/orion-context-broker-app-amd64"
-        },
-        {
-            "name": "OpenMTC - ARM - Backend",
+            "name": "OpenMTC - Backend for ARM",
             "image": "openmtc/backend-arm"
         },
         {
-            "name": "OpenMTC - ARM - CSV-Injector APP",
+            "name": "OpenMTC - CSV Injector App for AMD64",
+            "image": "openmtc/csv-injector-app-amd64"
+        },
+        {
+            "name": "OpenMTC - CSV Injector App for ARM",
             "image": "openmtc/csv-injector-app-arm"
         },
         {
-            "name": "OpenMTC - ARM - Cul868 Ipe",
+            "name": "OpenMTC - Cul868 IPE for AMD64",
+            "image": "openmtc/cul868-ipe-amd64"
+        },
+        {
+            "name": "OpenMTC - Cul868 IPE for ARM",
             "image": "openmtc/cul868-ipe-arm"
         },
         {
-            "name": "OpenMTC - ARM - Gateway",
+            "name": "OpenMTC - Gateway for AMD64",
+            "image": "openmtc/gateway-amd64"
+        },
+        {
+            "name": "OpenMTC - Gateway for ARM",
             "image": "openmtc/gateway-arm"
         },
         {
-            "name": "OpenMTC - ARM - InfluxDB App",
+            "name": "OpenMTC - InfluxDB App for AMD64",
+            "image": "openmtc/influxdb-app-amd64"
+        },
+        {
+            "name": "OpenMTC - InfluxDB App for ARM",
             "image": "openmtc/influxdb-app-arm"
         },
         {
-            "name": "OpenMTC - ARM - Orion CB App",
-            "image": "openmtc/orion-context-broker-app-arm"
+            "name": "OpenMTC - MQTT Connector App for AMD64",
+            "image": "openmtc/mqtt-connector-app-amd64"
         },
         {
-            "name": "OpenMTC - ARM MQTT-Connector APP",
+            "name": "OpenMTC - MQTT Connector App for ARM",
             "image": "openmtc/mqtt-connector-app-arm"
+        },
+        {
+            "name": "OpenMTC - Orion App for AMD64",
+            "image": "openmtc/orion-context-broker-app-amd64"
+        },
+        {
+            "name": "OpenMTC - Orion App for ARM",
+            "image": "openmtc/orion-context-broker-app-arm"
         },
         {
             "name": "Orion Context Broker",
@@ -185,32 +209,8 @@
             "image": "smartsdk/quantumleap"
         },
         {
-            "name": "STH - Comet",
+            "name": "STH-Comet",
             "image": "fiware/sth-comet"
-        },
-        {
-            "name": "The IoT Agent for the JSON based protocol",
-            "image": "fiware/iotagent-json"
-        },
-        {
-            "name": "The IoT Agent for the LoRaWAN",
-            "image": "fiware/iotagent-lorawan"
-        },
-        {
-            "name": "The IoT Agent for the OMA Lightweight M2M protocol",
-            "image": "fiware/lightweightm2m-iotagent"
-        },
-        {
-            "name": "The IoT Agent for the OPC UA",
-            "image": "rdlabengpa/opcuaage"
-        },
-        {
-            "name": "The IoT Agent for the Sigfox",
-            "image": "fiware/sigfox-iotagent"
-        },
-        {
-            "name": "The IoT Agent for the Ultralight 2.0",
-            "image": "fiware/iotagent-ul"
         },
         {
             "name": "Wilma",
