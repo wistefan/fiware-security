@@ -56,10 +56,6 @@ security_analysis() {
     ret=$?
     redirect_all echo
 
-    redirect_all echo "Removing docker instances..."
-    redirect_all docker-compose down
-    redirect_all echo
-
     line=$(grep 'latest: Pulling from arminc\/clair-db' ${filename})
 
     # Just for the 1st time...
@@ -147,6 +143,11 @@ init
 if [[ -n $1 ]]; then
     security_analysis "$1"
     docker_bench_security "$1"
+
+    # Remove images of the docker-compose to clean the environment
+    redirect_all echo "Removing docker instances..."
+    redirect_all docker-compose down
+    redirect_all echo
 else
     for ge in `more enablers.json | jq .enablers[].image | sed 's/"//g'`
     do
@@ -155,6 +156,11 @@ else
       redirect_all echo
       redirect_all echo
     done
+
+    # Remove images of the docker-compose to clean the environment
+    redirect_all echo "Removing docker instances..."
+    redirect_all docker-compose down
+    redirect_all echo
 fi
 
 exit ${ret}

@@ -56,3 +56,20 @@ The script will produce 2 files for each FIWARE GE in json format with the forma
 ``` 
 
 Inside this folder and into the docker-bench-security folder.
+
+Once that we get the files we can get the numbers of security vulnerabilies issues
+just executing the following shell commands with the use of the jq program for the
+CVE vulnerabilities:
+
+```bash
+more <name of ge><date>_<time>.json | jq '.[].vulnerabilities[].severity | select (.=="XXXX")' | wc -l
+```
+
+Where XXXX could be Low, Medium, or High values. In case of the CIS Docker Benchmark 
+(security best practices) the command that has to be executed is
+
+```bash
+more <name of ge><date>_<time>.json | grep YYYY | wc -l
+```
+
+Where YYYY could be PASS, INFO, NOTE, or WARN

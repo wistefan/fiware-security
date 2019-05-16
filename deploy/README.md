@@ -45,5 +45,5 @@ credentials needed to upload the security scan results into the corresponding FI
 Afterthat, just execute the corresponding playbook with the following command:
 
 ```bash
-ansible-palybook clair-deploy.yml 
+ansible-playbook scan-deploy.yml 
 ```
