@@ -2,3 +2,4 @@
 # Use 'virtualenv -ppython3.7 env' to define the virtual environment
 ansible==2.7.6
 openstacksdk==0.24.0
+requests==2.22.0

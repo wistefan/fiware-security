@@ -37,15 +37,18 @@ def generate_argparser():
     """
     parser = argparse.ArgumentParser(description='Perform security analysis of the FIWARE GE docker images.')
 
-    parser.add_argument('-p', '--pull', action="store_true", dest="pull", required=False, default=False,
+    parser.add_argument('-p', '--pull',         action="store_true", dest="pull",         required=False, default=False,
                         help="Pull the docker image from Docker Hub")
 
-    parser.add_argument('-v', '--verbose', action="store_true", dest="verbose", required=False, default=False,
+    parser.add_argument('-v', '--verbose',      action="store_true", dest="verbose",      required=False, default=False,
                         help="Verbose screen output")
 
-    parser.add_argument('-d', '--docker_image', action="store", dest="docker_image", required=False, default='',
+    parser.add_argument('-d', '--docker_image', action="store",      dest="docker_image", required=False, default='',
                         help="Name of the Docker Image to be analysed. If it is not provided the Docker images "
                              "are obtained from the enablers.json file.")
+
+    parser.add_argument('-s', '--summarize',    action="store_true", dest="summarize",    required=False, default=False,
+                        help="Create a summary of the security analysis.")
 
     return parser
 
@@ -129,6 +132,8 @@ def clair_analysis(enabler, verbose):
 
     # Send an email to the owner of the FIWARE GE
 
+    return filename
+
 
 def docker_bench_analysis(enabler, verbose):
     """
@@ -184,6 +189,8 @@ def docker_bench_analysis(enabler, verbose):
     system("rm ss")
     chdir(current_dir)
 
+    return filename
+
 
 def security_scan(enabler, verbose):
     """
@@ -192,15 +199,17 @@ def security_scan(enabler, verbose):
     :return:
     """
 
-    clair_analysis(enabler=enabler, verbose=verbose)
-    docker_bench_analysis(enabler=enabler, verbose=verbose)
+    filename1 = clair_analysis(enabler=enabler, verbose=verbose)
+    filename2 = docker_bench_analysis(enabler=enabler, verbose=verbose)
 
     # Delete the docker image analised
     print("\nDelete docker image ...\n".format(enabler['image']))
     system("docker rmi {} {}".format(enabler['image'], verbose))
 
+    return {'clair': filename1, 'bench': filename2}
 
-def scan(args):
+
+def scan(args, enablers):
     """
 
     :param args:
@@ -219,7 +228,9 @@ def scan(args):
 
         print("\nMaking a complete security analysis of the FIWARE GEs")
 
-        list(map(lambda x: security_scan(enabler=x, verbose=verbose), enablers['enablers']))
+        files = list(map(lambda x: security_scan(enabler=x, verbose=verbose), enablers['enablers']))
+
+        return files
     else:
         # Check that the specified docker image is really a FIWARE GE
         enabler = list(filter(lambda x: x['image'] == args.docker_image, enablers['enablers']))
@@ -234,7 +245,9 @@ def scan(args):
 
             print("\nMaking a security analysis of the FIWARE GE: {}".format(enabler[0]['name']))
 
-            list(map(lambda x: security_scan(enabler=x, verbose=verbose), enabler))
+            files = list(map(lambda x: security_scan(enabler=x, verbose=verbose), enabler))
+
+            return files
 
 
 def clean():
@@ -267,6 +280,34 @@ def clean():
             system(docker_rmi.format(aux))
 
 
+def print_data(ge, severities, best_practices):
+    print("\n{}".format(ge['clair']))
+    print("    CVE Severity")
+    command_severity = 'more {} | jq ".[].vulnerabilities[].severity | select (.==\\\"{}\\\")" | wc -l'
+    command_practices = 'more {} | jq ".tests[].results[].result | select (.==\\\"{}\\\")" | wc -l'
+
+    for severity in severities:
+        aux = subprocess.run([command_severity.format(ge['clair'], severity)], shell=True, capture_output=True)
+        aux = aux.stdout.decode().rstrip().replace(" ", "")
+        print("        {}: {}".format(severity, aux))
+
+    print("\n    CIS Docker Benchmark")
+    for best_practice in best_practices:
+        aux = subprocess.run([command_practices.format(ge['bench'], best_practice)], shell=True, capture_output=True)
+        aux = aux.stdout.decode().rstrip().replace(" ", "")
+        print("        {}: {}".format(best_practice, aux))
+
+
+def summarize(args, files):
+    if args.summarize is True:
+        chdir(join(getcwd(), 'results'))
+
+        # CVE Vulnerabilities
+        severities = ['Low', 'Medium', 'High']
+        results = ['PASS', 'INFO', 'NOTE', 'WARN']
+        list(map(lambda ge: print_data(ge=ge, severities=severities, best_practices=results), files))
+
+
 if __name__ == "__main__":
     p1 = generate_argparser()
 
@@ -274,8 +315,10 @@ if __name__ == "__main__":
 
     enablers = init(verbose=args.verbose)
 
-    scan(args=args)
+    files = scan(args=args, enablers=enablers)
 
     clean()
+
+    summarize(args=args, files=files)
 
     print('\nFinished')
