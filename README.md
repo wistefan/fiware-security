@@ -33,7 +33,7 @@ complete list of FIWARE GEs.
 
 ### Configuration
 
-The only things that you have to do is download the [container-scan.sh](container-scan.sh) 
+The only things that you have to do is download the [container-scan.py](container-scan.py) 
 file in your local folder to execute the corresponding security scanner over the selected 
 FIWARE GE or over the predefined set of FIWARE GEs (see [enablers.json](enablers.json)).
 
@@ -54,22 +54,24 @@ You can obtain a help description about the execution of the script just executi
 following command:
 
 ```bash
-./container-scan.sh -h
+./container-scan.py -h
 ```
 
 Which show the following content:
 
 ```bash
-    Usage: $0 [-pv] [IMAGE_NAME]
-    
-    Options:
-       -p : Pull images before running scan
-       -v : Verbose output
-       -h : This help message
-    
-      [IMAGE_NAME] : Optional, Docker image file to be analysed.
-                     If it is not provided the Docker images are 
-                     obtained from the enablers.json file.
+usage: container-scan.py [-h] [-p] [-v] [-d DOCKER_IMAGE]
+
+Perform security analysis of the FIWARE GE docker images.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p, --pull            Pull the docker image from Docker Hub
+  -v, --verbose         Verbose screen output
+  -d DOCKER_IMAGE, --docker_image DOCKER_IMAGE
+                        Name of the Docker Image to be analysed. If it is not
+                        provided the Docker images are obtained from the
+                        enablers.json file.
 ```    
 
 The script will produce 2 files for each FIWARE GE in json format with the format:

@@ -26,8 +26,8 @@ import json
 from datetime import datetime
 from http import HTTPStatus
 
-NEXUS_USERNAME = "security"
-NEXUS_PASSWORD = "7amtDUqr1#2P"
+NEXUS_USERNAME = "****"
+NEXUS_PASSWORD = "****"
 
 
 def generate_argparser():
