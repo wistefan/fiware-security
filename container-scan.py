@@ -21,7 +21,7 @@ from pathlib import Path
 import requests
 from os.path import join, dirname
 import subprocess
-from os import system, getcwd, chdir
+from os import system, getcwd, chdir, mkdir
 import json
 from datetime import datetime
 from http import HTTPStatus
@@ -59,7 +59,7 @@ def init(verbose):
     data = ''
 
     if Path('docker-compose.yml').exists() is False:
-        print("Getting docker-compose.yml file from repository...")
+        print("\nGetting docker-compose.yml file from repository...")
 
         r = requests.get(join(base_clair_repo, "docker-compose.yml"))
 
@@ -67,7 +67,7 @@ def init(verbose):
             fd.write(r.text)
 
     if Path('enablers.json').exists() is False:
-        print("Getting enablers.json file from repository...")
+        print("\nGetting enablers.json file from repository...")
 
         r = requests.get(join(base_clair_repo, "enablers.json"))
 
@@ -81,13 +81,13 @@ def init(verbose):
         with open("enablers.json", 'r') as fd:
             data = json.load(fd)
 
-    if Path('../docker-bench-security').exists() is False:
-        print("Cloning docker-bench-security from GitHub...")
-        # change directory to the parents
-        current_dir = getcwd()
-        chdir(dirname(current_dir))
+    if Path('docker-bench-security').exists() is False:
+        print("\nCloning docker-bench-security from GitHub...")
         system("git clone https://github.com/docker/docker-bench-security.git")
-        chdir(current_dir)
+
+    if Path('results').exists() is False:
+        print("\nCreating the results directory...")
+        mkdir(join(getcwd(), 'results'))
 
     return data
 
@@ -114,15 +114,15 @@ def clair_analysis(enabler, verbose):
 
     print("    Pulling from {} ...\n".format(image))
     system("docker pull {} {}".format(image, verbose))
-    print()
 
     # labels=$(docker inspect --type=image "$@" 2>/dev/null | jq .[].Config.Labels)
 
-    print("Security analysis of {} image ...\n".format(image))
-    extension = datetime.now().strftime('%Y%m%d_%H%m') + '.json'
+    print("\nSecurity analysis of {} image ...\n".format(image))
+    extension = datetime.now().strftime('%Y%m%d_%H%M') + '_clair.json'
     filename = name + '_' + extension
+    filename = filename.replace(" ", "_")
 
-    system("docker-compose run --rm scanner {} > '{}'".format(image, filename))
+    system("docker-compose run --rm scanner {} > './results/{}'".format(image, filename))
 
     # Just to finish, send the data to the nexus instance
     # post_data(enabler=enabler, filename=filename, verbose=verbose)
@@ -139,48 +139,50 @@ def docker_bench_analysis(enabler, verbose):
     name = enabler['name']
     image = enabler['image']
 
-    print("Docker bench analysis of {} image ...\n".format(image))
+    print("\nDocker bench analysis of {} image ...\n".format(image))
 
     current_dir = getcwd()
-    chdir(join(dirname(current_dir), 'docker-bench-security'))
+    # chdir(join(dirname(current_dir), 'docker-bench-security'))
+    chdir(join(current_dir, 'docker-bench-security'))
 
-    aux = subprocess.run(["docker images | grep -E {} | awk -e '{{print $3}}' ".format(image)],
-                         shell=True,
-                         capture_output=True)
+    # aux = subprocess.run(["docker images | grep -E {} | awk -e '{{print $3}}' ".format(image)],
+    #                      shell=True,
+    #                      capture_output=True)
+
+    # docker-bench-security search by default the script/programm ss to work
+    system("touch ss")
+    system("chmod 764 ss")
+
+    # In case of MacOS, change the "sed -r" command by the "sed -E" command
+    command = "grep -rnw . -e 'sed -r' | sed 's/:/ /g' | awk '{print $1}'"
+    aux = subprocess.run([command], shell=True, capture_output=True)
+    aux = aux.stdout.decode().rstrip()
+
+    command = "sed -i .bk 's/sed -r/sed -E/g' {}".format(aux)
+    system(command)
 
     command = "./docker-bench-security.sh  -t {} -c container_images,container_runtime,docker_security_operations"\
         .format(image)
 
-    extension = datetime.now().strftime('%Y%m%d_%H%m') + '.json'
+    extension = datetime.now().strftime('%Y%m%d_%H%M') + '_bech.json'
     filename = name + '_' + extension
+    filename = filename.replace(" ", "_")
 
     system(command)
 
-    system("mv docker-bench-security.sh.log.json {}".format(filename))
+    system("mv docker-bench-security.sh.log.json ../results/{}".format(filename))
 
     # Just to finish, send the data to the nexus instance
     # post_data(enabler=enabler, filename=filename, verbose=verbose)
 
     '''
-    redirect_all ./docker-bench-security.sh  -t "$@" -c container_images,container_runtime,docker_security_operations
-
-    extension="$(date +%Y%m%d_%H%M%S).json"
-    filename=$(echo "$@" | awk -F '/' -v a="$extension" '{print $2 a}')
-    enabler=$(echo "$@" | awk -F '/' '{print $2}')
-
-    mv docker-bench-security.sh.log.json ${filename}
-
-    redirect_all echo "Clean up the docker image..."
-    redirect_all docker rmi ${id}
-    redirect_all echo
-
-    redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
+    redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  
+                       https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
 
     cd ../clair-container-scan
     '''
+    system("rm ss")
     chdir(current_dir)
-
-    return "a filename"
 
 
 def security_scan(enabler, verbose):
@@ -190,11 +192,11 @@ def security_scan(enabler, verbose):
     :return:
     """
 
-    # clair_analysis(enabler=enabler, verbose=verbose)
+    clair_analysis(enabler=enabler, verbose=verbose)
     docker_bench_analysis(enabler=enabler, verbose=verbose)
 
     # Delete the docker image analised
-    print("Delete docker image ...\n".format(enabler['image']))
+    print("\nDelete docker image ...\n".format(enabler['image']))
     system("docker rmi {} {}".format(enabler['image'], verbose))
 
 
@@ -204,10 +206,10 @@ def scan(args):
     :param args:
     :return:
     """
-    args.docker_image = 'fiware/orion'
-
     if args.verbose is False:
         verbose = '2>/dev/null >/dev/null'
+    else:
+        verbose = ''
 
     if len(args.docker_image) == 0:
         # The docker image is not specified, therefore we make the complete analysis of the docker images in the
@@ -223,7 +225,8 @@ def scan(args):
         enabler = list(filter(lambda x: x['image'] == args.docker_image, enablers['enablers']))
 
         if len(enabler) == 0:
-            print("\nERROR: {} is not a FIWARE GE or the docker image is not the expected one.".format(args.docker_image))
+            print("\nERROR: {} is not a FIWARE GE or the docker image is not the expected one."
+                  .format(args.docker_image))
             exit(1)
         else:
             print("\nPulling Clair content ...")
@@ -232,6 +235,36 @@ def scan(args):
             print("\nMaking a security analysis of the FIWARE GE: {}".format(enabler[0]['name']))
 
             list(map(lambda x: security_scan(enabler=x, verbose=verbose), enabler))
+
+
+def clean():
+    """
+    Delete the dockers related to the Clair process and the corresponding images associated to them
+    :return:
+    """
+    containers = ['arminc/clair-local-scan', 'arminc/clair-db', 'quay.io/usr42/clair-container-scan']
+
+    docker_ps = 'docker ps --filter ancestor={} --format {{{{.ID}}}}'
+    docker_images = 'docker images {} --format {{{{.ID}}}}'
+    docker_stop = 'docker stop {}'
+    docker_rm = 'docker rm {}'
+    docker_rmi = 'docker rmi {}'
+
+    # Delete the containers finished
+    print("\nDelete the finished containers")
+    for container in containers:
+        aux = subprocess.run([docker_ps.format(container)], shell=True, capture_output=True)
+        aux = aux.stdout.decode().rstrip()
+
+        if len(aux) != 0:
+            system(docker_stop.format(aux))
+            system(docker_rm.format(aux))
+
+        aux = subprocess.run([docker_images.format(container)], shell=True, capture_output=True)
+        aux = aux.stdout.decode().rstrip()
+
+        if len(aux) != 0:
+            system(docker_rmi.format(aux))
 
 
 if __name__ == "__main__":
@@ -243,4 +276,6 @@ if __name__ == "__main__":
 
     scan(args=args)
 
-    print('Finished')
+    clean()
+
+    print('\nFinished')
