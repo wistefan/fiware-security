@@ -27,6 +27,7 @@ from datetime import datetime
 from http import HTTPStatus
 from logging import info, error
 from Common.config_logging import LoggingConf
+from Config.settings import CODEHOME, NEXUS_URL, NEXUS_PASSWORD, NEXUS_USER
 
 __author__ = 'Fernando López'
 
@@ -45,8 +46,9 @@ class SecurityScan(LoggingConf):
         else:
             self.verbose = ''
 
-        self.NEXUS_USERNAME = '***'
-        self.NEXUS_PASSWORD = '***'
+        self.NEXUS_USERNAME = NEXUS_USER
+        self.NEXUS_PASSWORD = NEXUS_PASSWORD
+        self.NEXUS_URL = NEXUS_URL
 
         base_clair_repo = "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common"
         current_directory = getcwd()
@@ -57,7 +59,7 @@ class SecurityScan(LoggingConf):
         data = ''
 
         if Path(self.path_docker_compose_file).exists() is False:
-            info("\nGetting CVE Severity Scan Compose file from repository...")
+            info("Getting CVE Severity Scan Compose file from repository...")
 
             r = get(join(base_clair_repo, 'cve_severity_scan.yml'))
 
@@ -65,7 +67,7 @@ class SecurityScan(LoggingConf):
                 fd.write(r.text)
 
         if Path(path_enablers_file).exists() is False:
-            info("\nGetting enablers.json file from repository...")
+            info("Getting enablers.json file from repository...")
 
             r = get(join(base_clair_repo, "enablers.json"))
 
@@ -80,20 +82,22 @@ class SecurityScan(LoggingConf):
                 data = load(fd)
 
         if Path('docker-bench-security').exists() is False:
-            info("\nCloning CIS Docker Benchmark content from GitHub...")
+            info("Cloning CIS Docker Benchmark content from GitHub...")
             system("git clone https://github.com/docker/docker-bench-security.git {}".format(self.verbose))
 
         if Path('results').exists() is False:
-            info("\nCreating the results directory...")
+            info("Creating the results directory...")
             mkdir(join(getcwd(), 'results'))
 
         self.enablers = data
 
-    def post_data(self, filename):
-        nexus_url = \
-            'https://nexus.lab.fiware.org/repository/security/check/{}/cve/{}'.format(self.enablers['name'], filename)
+    def __post_data__(self, enabler, folder, filename):
+        nexus_url = join(self.NEXUS_URL, '{}/{}/{}')
+        nexus_url = nexus_url.format(enabler['name'], folder, filename)
 
-        file = {'file': open(filename, 'r')}
+        path_filename = join(CODEHOME, join('results', filename))
+
+        file = {'file': open(path_filename, 'r')}
 
         r = put(nexus_url, auth=(self.NEXUS_USERNAME, self.NEXUS_PASSWORD), files=file)
 
@@ -109,21 +113,22 @@ class SecurityScan(LoggingConf):
         name = enabler['name']
         image = enabler['image']
 
-        info("    Pulling from {} ...\n".format(image))
+        info("Pulling from {} ...".format(image))
         system("docker pull {} {}".format(image, self.verbose))
 
         # labels=$(docker inspect --type=image "$@" 2>/dev/null | jq .[].Config.Labels)
 
-        info("\nSecurity analysis of {} image ...\n".format(image))
+        info("Security analysis of {} image ...".format(image))
         extension = datetime.now().strftime('%Y%m%d_%H%M') + '_clair.json'
         filename = name + '_' + extension
         filename = filename.replace(" ", "_")
 
-        system("docker-compose -f {} run --rm scanner {} > './results/{}'"
-               .format(self.path_docker_compose_file, image, filename))
+        command = "docker-compose -f {} run --rm scanner {} > ./results/{} 2>/dev/null" \
+            .format(self.path_docker_compose_file, image, filename)
+        run([command], shell=True, capture_output=False)
 
         # Just to finish, send the data to the nexus instance
-        # post_data(enabler=enabler, filename=filename, verbose=verbose)
+        self.__post_data__(enabler=enabler, folder='cve', filename=filename)
 
         # Send an email to the owner of the FIWARE GE
 
@@ -138,7 +143,7 @@ class SecurityScan(LoggingConf):
         name = enabler['name']
         image = enabler['image']
 
-        info("\nDocker bench analysis of {} image ...\n".format(image))
+        info("Docker bench analysis of {} image ...".format(image))
 
         current_dir = getcwd()
         chdir(join(current_dir, 'docker-bench-security'))
@@ -159,8 +164,9 @@ class SecurityScan(LoggingConf):
         command = "sed -i .bk 's/sed -r/sed -E/g' {}".format(aux)
         system(command)
 
-        command = "./docker-bench-security.sh  -t {} -c container_images,container_runtime,docker_security_operations" \
-            .format(image)
+        command = \
+            "./docker-bench-security.sh  -t {} -c container_images,container_runtime,docker_security_operations {}" \
+                .format(image, self.verbose)
 
         extension = datetime.now().strftime('%Y%m%d_%H%M') + '_bech.json'
         filename = name + '_' + extension
@@ -168,17 +174,12 @@ class SecurityScan(LoggingConf):
 
         system(command)
 
-        system("mv docker-bench-security.sh.log.json ../results/{}".format(filename))
+        command = "mv docker-bench-security.sh.log.json ../results/{}".format(filename)
+        run([command], shell=True, capture_output=False)
 
         # Just to finish, send the data to the nexus instance
-        # post_data(enabler=enabler, filename=filename, verbose=verbose)
+        self.__post_data__(enabler=enabler, folder='cis', filename=filename)
 
-        '''
-        redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  
-                           https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
-    
-        cd ../clair-container-scan
-        '''
         system("rm ss")
         chdir(current_dir)
 
@@ -195,10 +196,10 @@ class SecurityScan(LoggingConf):
         filename2 = self.__cis_docker_benchmark__(enabler=enabler)
 
         # Delete the docker image analysed
-        info("\nDelete docker image ...\n".format(enabler['image']))
+        info("Delete docker image ...".format(enabler['image']))
         system("docker rmi {} {}".format(enabler['image'], self.verbose))
 
-        return {'clair': filename1, 'bench': filename2}
+        return {'clair': filename1, 'bench': filename2, 'name': enabler['name']}
 
     def analysis(self, enabler):
         """
@@ -211,10 +212,10 @@ class SecurityScan(LoggingConf):
         if len(enabler) == 0:
             # The docker image is not specified, therefore we make the complete analysis of the docker images in the
             # enablers.json file
-            info("\nPulling CVE Severity Scan content ...")
+            info("Pulling CVE Severity Scan content ...")
             system("docker-compose -f {} pull {}".format(self.path_docker_compose_file, self.verbose))
 
-            info("\nMaking a complete security analysis of the FIWARE GEs")
+            info("Making a complete security analysis of the FIWARE GEs")
 
             result_files = list(map(lambda x: self.__security_scan__(enabler=x), self.enablers['enablers']))
         else:
@@ -226,10 +227,10 @@ class SecurityScan(LoggingConf):
                       .format(enabler))
                 exit(1)
             else:
-                info("\nPulling CVE Severity Scan content ...")
+                info("Pulling CVE Severity Scan content ...")
                 system("docker-compose -f {} pull {}".format(self.path_docker_compose_file, self.verbose))
 
-                info("\nMaking a security analysis of the FIWARE GE: {}".format(fiware_enabler[0]['name']))
+                info("Making a security analysis of the FIWARE GE: {}".format(fiware_enabler[0]['name']))
 
                 result_files = list(map(lambda x: self.__security_scan__(enabler=x), fiware_enabler))
 
@@ -251,7 +252,7 @@ class SecurityScan(LoggingConf):
         docker_rmi = 'docker rmi {} {}'
 
         # Delete the containers finished
-        info("\nDelete the finished containers")
+        info("Delete the finished containers")
         for container in containers:
             aux = run([docker_ps.format(container)], shell=True, capture_output=True)
             aux = aux.stdout.decode().rstrip()
@@ -271,30 +272,47 @@ class SecurityScan(LoggingConf):
         if directory.exists() is True:
             rmtree(directory)
 
-    @staticmethod
-    def print_data(ge, severities, best_practices):
-        print("\n{}".format(ge['clair']))
-        print("    CVE Severity")
+    def print_data(self, ge, severities, best_practices, stdout=True):
+        # String to send the results to the log file
+        output1 = ge['name'] + " - (CVE Severity)"
+        # String to send the results to the usual output screen
+        output2 = '\n{}'.format(ge['name']) + "\n    CVE Severity"
+
         command_severity = 'more {} | jq ".[].vulnerabilities[].severity | select (.==\\\"{}\\\")" | wc -l'
         command_practices = 'more {} | jq ".tests[].results[].result | select (.==\\\"{}\\\")" | wc -l'
 
         for severity in severities:
             aux = run([command_severity.format(ge['clair'], severity)], shell=True, capture_output=True)
             aux = aux.stdout.decode().rstrip().replace(" ", "")
-            print("        {}: {}".format(severity, aux))
+            output1 = output1 + " {}: {}".format(severity, aux)
+            output2 = output2 + "\n        {}: {}".format(severity, aux)
 
-        print("\n    CIS Docker Benchmark")
+        info(output1)
+
+        output1 = ge['name'] + ' - ' + "(CIS Docker Benchmark)"
+        output2 = output2 + "\n    CIS Docker Benchmark"
         for best_practice in best_practices:
             aux = run([command_practices.format(ge['bench'], best_practice)], shell=True, capture_output=True)
             aux = aux.stdout.decode().rstrip().replace(" ", "")
-            print("        {}: {}".format(best_practice, aux))
+            output1 = output1 + " {}: {}".format(best_practice, aux)
+            output2 = output2 + "\n        {}: {}".format(best_practice, aux)
+
+        output2 = output2 + "\n\n Finished"
+
+        info(output1)
+
+        if stdout is True:
+            print(output2)
+
+        info("Finished ...")
 
     def summarize(self, args, files):
-        if args.summarize is True:
-            chdir(join(getcwd(), 'results'))
+        chdir(join(getcwd(), 'results'))
 
-            # CVE Vulnerabilities
-            severities = ['Low', 'Medium', 'High']
-            results = ['PASS', 'INFO', 'NOTE', 'WARN']
+        # CVE Vulnerabilities
+        severities = ['Low', 'Medium', 'High']
+        results = ['PASS', 'INFO', 'NOTE', 'WARN']
 
-            list(map(lambda ge: self.print_data(ge=ge, severities=severities, best_practices=results), files))
+        list(map(lambda ge:
+                 self.print_data(ge=ge, severities=severities, best_practices=results, stdout=args.summarize),
+                 files))

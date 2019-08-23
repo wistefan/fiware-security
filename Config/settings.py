@@ -69,9 +69,9 @@ def config_section_map(section):
 if Config.sections():
     # Nexus data section
     nexus_section = config_section_map("nexus")
-    ACCESS_TOKEN = nexus_section['url']
-    REFRESH_TOKEN = nexus_section['user']
-    CLIENT_ID = nexus_section['password']
+    NEXUS_URL = nexus_section['url']
+    NEXUS_USER = nexus_section['user']
+    NEXUS_PASSWORD = nexus_section['password']
 
     # Logging data section
     logging_section = config_section_map("logging")

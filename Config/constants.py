@@ -22,3 +22,4 @@ __author__ = 'fla'
 """File with Constants used in DesksReminder project.
 """
 
+VERBOSE = '2>/dev/null >/dev/null'
