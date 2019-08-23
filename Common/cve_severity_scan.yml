@@ -8,6 +8,7 @@ services:
             test: nc -z db 5432
             interval: 1s
             retries: 20
+
     clair:
         image: arminc/clair-local-scan:latest
         links:
@@ -20,6 +21,7 @@ services:
             test: nc -z clair 6060 && nc -z clair 6061
             interval: 1s
             retries: 20
+
     scanner:
         image: quay.io/usr42/clair-container-scan:latest
         links:

@@ -33,7 +33,7 @@ complete list of FIWARE GEs.
 
 ### Configuration
 
-The only things that you have to do is download the [container-scan.py](container-scan.py) 
+The only things that you have to do is download the [scan.py](scan.py) 
 file in your local folder to execute the corresponding security scanner over the selected 
 FIWARE GE or over the predefined set of FIWARE GEs (see [enablers.json](enablers.json)).
 
