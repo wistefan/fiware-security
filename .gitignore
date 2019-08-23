@@ -111,3 +111,6 @@ venv.bak/
 
 # Execution results
 ./results/*,json
+
+# Docker configuration files
+./docker/management.ini

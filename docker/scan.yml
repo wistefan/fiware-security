@@ -1,0 +1,12 @@
+# use image if you have a dedicated build step:
+#   docker build --rm --build-arg BRANCH=develop -t docker-scan-security .
+# image: docker-scan-security
+# use build path to Dockerfile if docker-compose should build the image
+version: '3.7'
+services:
+  docker-scan-security:
+    image: docker-scan-security:latest
+    labels:
+      - docker-scan-security
+    volumes:
+      - ./management.ini:/home/mgmt/fiware-clair/Config/management.ini

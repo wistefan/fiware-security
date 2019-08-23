@@ -19,9 +19,6 @@
 from argparse import ArgumentParser
 from Common.security_scan import SecurityScan
 
-NEXUS_USERNAME = "****"
-NEXUS_PASSWORD = "****"
-
 __author__ = 'Fernando López'
 
 
@@ -32,40 +29,23 @@ def generate_argparser():
     """
     parser = ArgumentParser(description='Perform security analysis of the FIWARE GE docker images.')
 
+    parser.add_argument('-v', '--verbose', action="store_true", dest="verbose", required=False, default=False,
+                        help="Verbose screen output")
+
     parser.add_argument('-p', '--pull', action="store_true", dest="pull", required=False, default=False,
                         help="Pull the docker image from Docker Hub")
 
-    parser.add_argument('-v', '--verbose', action="store_true", dest="verbose", required=False, default=False,
-                        help="Verbose screen output")
+    parser.add_argument('-s', '--summary', action="store_true", dest="summarize", required=False, default=False,
+                        help="Create a summary of the security analysis.")
 
     parser.add_argument('-d', '--docker_image', action="store", dest="docker_image", required=False, default='',
                         help="Name of the Docker Image to be analysed. If it is not provided the Docker images "
                              "are obtained from the enablers.json file.")
 
-    parser.add_argument('-s', '--summarize', action="store_true", dest="summarize", required=False, default=False,
-                        help="Create a summary of the security analysis.")
-
     return parser
 
 
 if __name__ == "__main__":
-    '''
-    logger = log_init()
-
-    p1 = generate_argparser()
-
-    arguments = p1.parse_args()
-
-    fiware_enablers = init(verbose=arguments.verbose)
-
-    results = scan(args=arguments, enablers=fiware_enablers)
-
-    clean()
-
-    summarize(args=arguments, files=results)
-
-    info('\nFinished')
-    '''
     p1 = generate_argparser()
 
     arguments = p1.parse_args()
@@ -74,4 +54,3 @@ if __name__ == "__main__":
     results = scan.analysis(enabler=arguments.docker_image)
 
     scan.summarize(args=arguments, files=results)
-
