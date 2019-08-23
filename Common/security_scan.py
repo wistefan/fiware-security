@@ -20,7 +20,7 @@ from pathlib import Path
 from requests import get, put
 from os.path import join
 from subprocess import run
-from os import system, getcwd, chdir, mkdir
+from os import system, getcwd, chdir, mkdir, rename
 from shutil import rmtree
 from json import load
 from datetime import datetime
@@ -28,6 +28,7 @@ from http import HTTPStatus
 from logging import info, error
 from Common.config_logging import LoggingConf
 from Config.settings import CODEHOME, NEXUS_URL, NEXUS_PASSWORD, NEXUS_USER
+import docker
 
 __author__ = 'Fernando López'
 
@@ -52,7 +53,11 @@ class SecurityScan(LoggingConf):
 
         base_clair_repo = "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common"
         current_directory = getcwd()
-        common_directory = join(current_directory, 'Common')
+
+        if 'fiware-clair' in current_directory:
+            common_directory = join(current_directory, 'Common')
+        else:
+            common_directory = join(join(current_directory, 'fiware-clair'), 'Common')
 
         path_enablers_file = join(common_directory, 'enablers.json')
         self.path_docker_compose_file = join(common_directory, 'cve_severity_scan.yml')
@@ -90,6 +95,8 @@ class SecurityScan(LoggingConf):
             mkdir(join(getcwd(), 'results'))
 
         self.enablers = data
+        self.client = docker.from_env()
+
 
     def __post_data__(self, enabler, folder, filename):
         nexus_url = join(self.NEXUS_URL, '{}/{}/{}')
@@ -114,9 +121,10 @@ class SecurityScan(LoggingConf):
         image = enabler['image']
 
         info("Pulling from {} ...".format(image))
-        system("docker pull {} {}".format(image, self.verbose))
 
-        # labels=$(docker inspect --type=image "$@" 2>/dev/null | jq .[].Config.Labels)
+        # command = "docker pull {} {}".format(image, self.verbose)
+        # out = run([command], shell=True, capture_output=False)
+        self.client.images.pull(image)
 
         info("Security analysis of {} image ...".format(image))
         extension = datetime.now().strftime('%Y%m%d_%H%M') + '_clair.json'
@@ -162,20 +170,21 @@ class SecurityScan(LoggingConf):
         aux = aux.stdout.decode().rstrip()
 
         command = "sed -i .bk 's/sed -r/sed -E/g' {}".format(aux)
-        system(command)
+        run([command], shell=True, capture_output=True)
 
         command = \
-            "./docker-bench-security.sh  -t {} -c container_images,container_runtime,docker_security_operations {}" \
+            "./docker-bench-security.sh  -t {} -c container_images,container_runtime,docker_security_operations {}"\
                 .format(image, self.verbose)
+
+        run([command], shell=True, capture_output=False)
 
         extension = datetime.now().strftime('%Y%m%d_%H%M') + '_bech.json'
         filename = name + '_' + extension
         filename = filename.replace(" ", "_")
 
-        system(command)
-
-        command = "mv docker-bench-security.sh.log.json ../results/{}".format(filename)
-        run([command], shell=True, capture_output=False)
+        # command = "mv docker-bench-security.sh.log.json ../results/{}".format(filename)
+        # run([command], shell=True, capture_output=False)
+        rename('docker-bench-security.sh.log.json', '../results/{}'.format(filename))
 
         # Just to finish, send the data to the nexus instance
         self.__post_data__(enabler=enabler, folder='cis', filename=filename)
@@ -197,7 +206,8 @@ class SecurityScan(LoggingConf):
 
         # Delete the docker image analysed
         info("Delete docker image ...".format(enabler['image']))
-        system("docker rmi {} {}".format(enabler['image'], self.verbose))
+        # system("docker rmi {} {}".format(enabler['image'], self.verbose))
+        self.client.images.remove(enabler['image'])
 
         return {'clair': filename1, 'bench': filename2, 'name': enabler['name']}
 
@@ -223,7 +233,7 @@ class SecurityScan(LoggingConf):
             fiware_enabler = list(filter(lambda x: x['image'] == enabler, self.enablers['enablers']))
 
             if len(fiware_enabler) == 0:
-                error("\n{} is not a FIWARE GE or the docker image is not the expected one."
+                error("{} is not a FIWARE GE or the docker image is not the expected one."
                       .format(enabler))
                 exit(1)
             else:
@@ -254,18 +264,32 @@ class SecurityScan(LoggingConf):
         # Delete the containers finished
         info("Delete the finished containers")
         for container in containers:
-            aux = run([docker_ps.format(container)], shell=True, capture_output=True)
-            aux = aux.stdout.decode().rstrip()
+            # aux = run([docker_ps.format(container)], shell=True, capture_output=True)
+            # aux = aux.stdout.decode().rstrip()
+            aux = self.client.containers.list(all=True, filters={'ancestor': '{}'.format(container)})
+            aux = list(map(lambda x: x.id, aux))
 
             if len(aux) != 0:
-                system(docker_stop.format(aux, self.verbose))
-                system(docker_rm.format(aux, self.verbose))
+                # system(docker_stop.format(aux, self.verbose))
+                # system(docker_rm.format(aux, self.verbose))
+                # docker_stop = 'docker stop {} {}'
+                list(map(lambda x: self.client.containers.get(x).stop(), aux))
 
-            aux = run([docker_images.format(container)], shell=True, capture_output=True)
-            aux = aux.stdout.decode().rstrip()
+                # docker_rm = 'docker rm {} {}'
+                list(map(lambda x: self.client.containers.get(x).remove(), aux))
 
-            if len(aux) != 0:
-                system(docker_rmi.format(aux, self.verbose))
+            # aux = run([docker_images.format(container)], shell=True, capture_output=True)
+            # aux = aux.stdout.decode().rstrip()
+
+            # if len(aux) != 0:
+            #     system(docker_rmi.format(aux, self.verbose))
+
+            # docker_images = 'docker images {} --format {{{{.ID}}}}'
+            b = self.client.images.get(container)
+            print(b)
+
+            # docker_rmi = 'docker rmi {} {}'
+            self.client.images.remove(b.id)
 
         # Delete the folder in which was installed the docker-bench-security
         directory = Path('docker-bench-security')

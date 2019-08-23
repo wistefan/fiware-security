@@ -206,7 +206,7 @@
         },
         {
             "name": "Orion-LD",
-            "image": "fiware/orion-ld"
+            "image": "fiware/orion-ld:latest"
         },
         {
             "name": "QuantumLeap",
