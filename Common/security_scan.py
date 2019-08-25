@@ -28,7 +28,9 @@ from http import HTTPStatus
 from logging import info, error
 from Common.config_logging import LoggingConf
 from Config.settings import CODEHOME, NEXUS_URL, NEXUS_PASSWORD, NEXUS_USER
-import docker
+from docker import from_env
+from git.repo.base import Repo
+from yaml import dump
 
 __author__ = 'Fernando López'
 
@@ -88,15 +90,15 @@ class SecurityScan(LoggingConf):
 
         if Path('docker-bench-security').exists() is False:
             info("Cloning CIS Docker Benchmark content from GitHub...")
-            system("git clone https://github.com/docker/docker-bench-security.git {}".format(self.verbose))
+            #system("git clone https://github.com/docker/docker-bench-security.git {}".format(self.verbose))
+            Repo.clone_from("https://github.com/docker/docker-bench-security.git", "./docker-bench-security")
 
         if Path('results').exists() is False:
             info("Creating the results directory...")
             mkdir(join(getcwd(), 'results'))
 
         self.enablers = data
-        self.client = docker.from_env()
-
+        self.client = from_env()
 
     def __post_data__(self, enabler, folder, filename):
         nexus_url = join(self.NEXUS_URL, '{}/{}/{}')
@@ -121,9 +123,6 @@ class SecurityScan(LoggingConf):
         image = enabler['image']
 
         info("Pulling from {} ...".format(image))
-
-        # command = "docker pull {} {}".format(image, self.verbose)
-        # out = run([command], shell=True, capture_output=False)
         self.client.images.pull(image)
 
         info("Security analysis of {} image ...".format(image))
@@ -156,10 +155,6 @@ class SecurityScan(LoggingConf):
         current_dir = getcwd()
         chdir(join(current_dir, 'docker-bench-security'))
 
-        # aux = subprocess.run(["docker images | grep -E {} | awk -e '{{print $3}}' ".format(image)],
-        #                      shell=True,
-        #                      capture_output=True)
-
         # docker-bench-security search by default the script/programm ss to work
         system("touch ss")
         system("chmod 764 ss")
@@ -182,8 +177,6 @@ class SecurityScan(LoggingConf):
         filename = name + '_' + extension
         filename = filename.replace(" ", "_")
 
-        # command = "mv docker-bench-security.sh.log.json ../results/{}".format(filename)
-        # run([command], shell=True, capture_output=False)
         rename('docker-bench-security.sh.log.json', '../results/{}'.format(filename))
 
         # Just to finish, send the data to the nexus instance
@@ -206,7 +199,6 @@ class SecurityScan(LoggingConf):
 
         # Delete the docker image analysed
         info("Delete docker image ...".format(enabler['image']))
-        # system("docker rmi {} {}".format(enabler['image'], self.verbose))
         self.client.images.remove(enabler['image'])
 
         return {'clair': filename1, 'bench': filename2, 'name': enabler['name']}
@@ -255,38 +247,21 @@ class SecurityScan(LoggingConf):
         """
         containers = ['arminc/clair-local-scan', 'arminc/clair-db', 'quay.io/usr42/clair-container-scan']
 
-        docker_ps = 'docker ps --filter ancestor={} --format {{{{.ID}}}}'
-        docker_images = 'docker images {} --format {{{{.ID}}}}'
-        docker_stop = 'docker stop {} {}'
-        docker_rm = 'docker rm {} {}'
-        docker_rmi = 'docker rmi {} {}'
-
         # Delete the containers finished
         info("Delete the finished containers")
         for container in containers:
-            # aux = run([docker_ps.format(container)], shell=True, capture_output=True)
-            # aux = aux.stdout.decode().rstrip()
             aux = self.client.containers.list(all=True, filters={'ancestor': '{}'.format(container)})
             aux = list(map(lambda x: x.id, aux))
 
             if len(aux) != 0:
-                # system(docker_stop.format(aux, self.verbose))
-                # system(docker_rm.format(aux, self.verbose))
                 # docker_stop = 'docker stop {} {}'
                 list(map(lambda x: self.client.containers.get(x).stop(), aux))
 
                 # docker_rm = 'docker rm {} {}'
                 list(map(lambda x: self.client.containers.get(x).remove(), aux))
 
-            # aux = run([docker_images.format(container)], shell=True, capture_output=True)
-            # aux = aux.stdout.decode().rstrip()
-
-            # if len(aux) != 0:
-            #     system(docker_rmi.format(aux, self.verbose))
-
             # docker_images = 'docker images {} --format {{{{.ID}}}}'
             b = self.client.images.get(container)
-            print(b)
 
             # docker_rmi = 'docker rmi {} {}'
             self.client.images.remove(b.id)
@@ -296,47 +271,63 @@ class SecurityScan(LoggingConf):
         if directory.exists() is True:
             rmtree(directory)
 
-    def print_data(self, ge, severities, best_practices, stdout=True):
+    def __count_data__(self, data):
+        dat_counts = [{x: data.count(x)} for x in set(data)]
+        dat_counts = dict((key, d[key]) for d in dat_counts for key in d)
+
+        return dat_counts
+
+    def __extract_result__(self, data):
+        desc = data['desc']
+        result = list(map(lambda x: x['result'], data['results']))
+
+        counts = self.__count_data__(result)
+
+        return {desc: counts}
+
+    def print_data(self, ge, stdout=True):
         # String to send the results to the log file
         output1 = ge['name'] + " - (CVE Severity)"
         # String to send the results to the usual output screen
         output2 = '\n{}'.format(ge['name']) + "\n    CVE Severity"
 
-        command_severity = 'more {} | jq ".[].vulnerabilities[].severity | select (.==\\\"{}\\\")" | wc -l'
-        command_practices = 'more {} | jq ".tests[].results[].result | select (.==\\\"{}\\\")" | wc -l'
+        with open(ge['clair'], 'r') as fd:
+            data = load(fd)
 
-        for severity in severities:
-            aux = run([command_severity.format(ge['clair'], severity)], shell=True, capture_output=True)
-            aux = aux.stdout.decode().rstrip().replace(" ", "")
-            output1 = output1 + " {}: {}".format(severity, aux)
-            output2 = output2 + "\n        {}: {}".format(severity, aux)
+        aux = list(map(lambda x: x['severity'], data[0]['vulnerabilities']))
+        counts = self.__count_data__(aux)
+
+        output1 = output1 + ": " + str(counts)
+        aux = dump(counts, default_flow_style=False).replace('\n', '\n\t')
+        output2 = output2 + "\n\t" + aux
+        fd.close()
 
         info(output1)
 
         output1 = ge['name'] + ' - ' + "(CIS Docker Benchmark)"
         output2 = output2 + "\n    CIS Docker Benchmark"
-        for best_practice in best_practices:
-            aux = run([command_practices.format(ge['bench'], best_practice)], shell=True, capture_output=True)
-            aux = aux.stdout.decode().rstrip().replace(" ", "")
-            output1 = output1 + " {}: {}".format(best_practice, aux)
-            output2 = output2 + "\n        {}: {}".format(best_practice, aux)
 
-        output2 = output2 + "\n\n Finished"
+        with open(ge['bench'], 'r') as fd:
+            data = load(fd)
+
+        result = list(map(lambda x: self.__extract_result__(x), data['tests']))
+        result = dict((key, d[key]) for d in result for key in d)
+
+        output1 = output1 + ": " + str(result)
+        aux = dump(result, default_flow_style=False).replace('\n', '\n\t')
+        output2 = output2 + "\n\t" + aux
+        fd.close()
+
+        output2 = output2 + "\n\n ... Finished"
 
         info(output1)
 
         if stdout is True:
             print(output2)
 
-        info("Finished ...")
+        info("... Finished")
 
     def summarize(self, args, files):
         chdir(join(getcwd(), 'results'))
 
-        # CVE Vulnerabilities
-        severities = ['Low', 'Medium', 'High']
-        results = ['PASS', 'INFO', 'NOTE', 'WARN']
-
-        list(map(lambda ge:
-                 self.print_data(ge=ge, severities=severities, best_practices=results, stdout=args.summarize),
-                 files))
+        list(map(lambda ge: self.print_data(ge=ge, stdout=args.summarize), files))

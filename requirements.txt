@@ -2,3 +2,5 @@
 # Use 'virtualenv -ppython3.7 env' to define the virtual environment
 requests==2.22.0
 docker==3.7.3
+GitPython==3.0.2
+PyYAML==5.1.2
