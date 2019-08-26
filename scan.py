@@ -53,4 +53,4 @@ if __name__ == "__main__":
     scan = SecurityScan(verbose=arguments.verbose)
     results = scan.analysis(enabler=arguments.docker_image)
 
-    scan.summarize(args=arguments, files=results)
+    SecurityScan.summarize(args=arguments, files=results)

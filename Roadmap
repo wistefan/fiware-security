@@ -1,0 +1,200 @@
+Issue 1: Automatic recovery of the enablers.json code base on the content of
+
+Issue 2: GREP BASED CODE SECURITY SCANNING
+---
+-
+    GREP STRING: password, passwd, credential, passphrase
+    LOOK FOR: Hardcoded passwords, insecure password storage, insecure password transmission, password policy, etc….
+    LANGUAGES: all
+-
+    GREP STRING: sql, query(
+    LOOK FOR: sql injection (string concatenation)
+    LANGUAGES: all
+-
+    GREP STRING: strcat, strcpy, strncat, strncpy, sprintf, gets
+    LOOK FOR: dangerous C functions used in iOS
+    LANGUAGES: iOS
+-
+    GREP STRING: setAllowsAnyHTTPSCertificate, validatesSecureCertificate, allowInvalidCertificates, kCFStreamSSLValidatesCertificateChain
+    LOOK FOR: disables TLS cert checking
+    LANGUAGES: iOS
+-
+    GREP STRING: crypt
+    LOOK FOR: hardcoded keys, fixed IVs, confusing encryption with message integrity, hardcoded salts, crypto soup, insecure mode of operation for symmetric cipher, misuse of a hash function, confusing a password with a crypto key, insecure randomness, key size too small.  See Top 10 Developer Crypto Mistakes
+    LANGUAGES: all
+-
+    GREP STRING: CCCrypt
+    LOOK FOR: IV is not optional(Apple API documentation is wrong) if security is required
+    LANGUAGES: iOS
+-
+    GREP STRING: md5, sha1, sha-1
+    LOOK FOR: insecure, deprecate hash function
+    LANGUAGES: all
+-
+    GREP STRING: 3des, des3, TripleDES
+    LOOK FOR: insecure deprecate encryption function
+    LANGUAGES: all
+-
+    GREP STRING: debuggable
+    LOOK FOR: do not ship debugabble code
+    LANGUAGES: android
+-
+    GREP STRING: WRITE_EXTERNAL_STORAGE, sdcard, getExternalStorageDirectory, isExternalStorageWritable
+    LOOK FOR: check that sensitive data is not being written to insecure storage
+    LANGUAGES: android
+-
+    GREP STRING: MODE_WORLD_READABLE, MODE_WORLD_WRITEABLE
+    LOOK FOR: should never make files world readable or writeable
+    LANGUAGES: android
+-
+    GREP STRING: SSLSocketFactory
+    LOOK FOR: dangerous functionality — insecure API, easy to make mistakes
+    LANGUAGES: java
+-
+    GREP STRING: SecretKeySpec
+    LOOK FOR: verify that crypto keys are not hardcoded
+    LANGUAGES: java
+-
+    GREP STRING: PBEParameterSpec
+    LOOK FOR: verify salt is not hardcoded and iterations is at least 10,000
+    LANGUAGES: c#
+-
+    GREP STRING: PasswordDeriveBytes
+    LOOK FOR: insecure password based key derivation function (PBKDF1)
+    LANGUAGES: c#
+-
+    GREP STRING: rc4, arcfour
+    LOOK FOR: deprecated, insecure stream cipher
+    LANGUAGES: all
+-
+    GREP STRING: exec(
+    LOOK FOR: remote code execution if user input is sent in
+    LANGUAGES: java
+-
+    GREP STRING: eval(
+    LOOK FOR: remote code execution if user input is sent in
+    LANGUAGES: javascript
+-
+    GREP STRING: http:
+    LOOK FOR: insecure transport layer security, need https:
+    LANGUAGES: all
+-
+    GREP STRING: ftp:
+    LOOK FOR: insecure file transfer, need ftps:
+    LANGUAGES: all
+-
+    GREP STRING: ALLOW_ALL_HOSTNAME_VERIFIER, AllowAllHostnameVerifier
+    LOOK FOR: certificate checking disabled
+    LANGUAGES: java
+-
+    GREP STRING: printStackTrace
+    LOOK FOR: should not output stack traces (information disclosure)
+    LANGUAGES: java, jsp
+-
+    GREP STRING: readObject(
+    LOOK FOR: potential deserialization vulnerability if input is untrusted
+    LANGUAGES: java
+-
+    GREP STRING: dangerouslySetInnerHTML
+    LOOK FOR: dangerous React functionality (XSS)
+    LANGUAGES: javascript
+-
+    GREP STRING: trustAsHtml
+    LOOK FOR: dangerous Angular functionality
+    LANGUAGES: javascript
+-
+    GREP STRING:
+    LOOK FOR: (XSS)
+    LANGUAGES:
+-
+    GREP STRING: Math.random(
+    LOOK FOR: not cryptographically secure
+    LANGUAGES: javascript
+-
+    GREP STRING: java.util.Random
+    LOOK FOR: not cryptographically secure
+    LANGUAGES: java
+-
+    GREP STRING: SAXParserFactory, DOM4J, XMLInputFactory, TransformerFactory, javax.xml.validation.Validator, SchemaFactory, SAXTransformerFactory, XMLReader SAXBuilder, SAXReader, javax.xml.bind.Unmarshaller, XPathExpression DOMSource, StAXSource
+    LOOK FOR: vulnerable to XXE by default
+    LANGUAGES: java
+-
+    GREP STRING: controller
+    LOOK FOR: MVC controller functionality: check for input validation
+    LANGUAGES: c#, java
+-
+    GREP STRING: HttpServletRequest
+    LOOK FOR: check for input validation
+    LANGUAGES: java
+-
+    GREP STRING: request.getParameter
+    LOOK FOR: check for input validation
+    LANGUAGES: jsp
+-
+    GREP STRING: exec
+    LOOK FOR: dynamic sql: potential for sql injection
+    LANGUAGES: sql
+-
+    GREP STRING: getAcceptedIssuers
+    LOOK FOR: If null is returned, then TLS host name verification is disabled
+    LANGUAGES: android
+-
+    GREP STRING: isTrusted
+    LOOK FOR: If returns true, then TLS validation is disabled
+    LANGUAGES: java
+-
+    GREP STRING: trustmanager
+    LOOK FOR: could be used to skip cert checking
+    LANGUAGES: java
+-
+    GREP STRING: ServerCertificateValidationCallback
+    LOOK FOR: If returns true, then TLS validation is disabled
+    LANGUAGES: c#
+-
+    GREP STRING: checkCertificateName
+    LOOK FOR: If set to false, then hostname verification is disabled
+    LANGUAGES: c#
+-
+    GREP STRING: checkCertificateRevocationList
+    LOOK FOR: If set to false, then CRLS not checked
+    LANGUAGES: c#
+-
+    GREP STRING: NODE_TLS_REJECT_UNAUTHORIZED
+    LOOK FOR: certificate checking is disabled
+    LANGUAGES: javascript
+-
+    GREP STRING: rejectUnauthorized, insecure, strictSSL, clientPemCrtSignedBySelfSignedRootCaBuffer
+    LOOK FOR: cert checking may be disabled
+    LANGUAGES: javascript
+-
+    GREP STRING: NSExceptionDomains, NSAllowsArbitraryLoads, NSExceptionAllowsInsecureHTTPLoads
+    LOOK FOR: allows http instead of https traffic
+    LANGUAGES: iOS
+-
+    GREP STRING: kSSLProtocol3, kSSLProtocol2, kSSLProtocolAll, NSExceptionMinimumTLSVersion
+    LOOK FOR: allows insecure SSL communications
+    LANGUAGES: iOS
+-
+    GREP STRING: public-read
+    LOOK FOR: publicly readable Amazon S3 bucket — make sure no confidential data stored
+    LANGUAGES: all
+-
+    GREP STRING: AWS_KEY
+    LOOK FOR: look for hardcoded AWS keys
+    LANGUAGES: all
+-
+    GREP STRING: urllib3.disable_warnings
+    LOOK FOR: certificate checking may be disabled
+    LANGUAGES: python
+-
+    GREP STRING: ssl_version
+    LOOK FOR: can be used to allow insecure SSL comms
+    LANGUAGES: python
+-
+    GREP STRING: cookie
+    LOOK FOR: make sure cookies set secure and httpOnly attributes
+    LANGUAGES: all
+-
+    GREP STRING: kSecAttrAccessibleAlways
+    LOOK FOR: insecure keychain access
+    LANGUAGES: iOS

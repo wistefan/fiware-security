@@ -20,17 +20,20 @@ from pathlib import Path
 from requests import get, put
 from os.path import join
 from subprocess import run
-from os import system, getcwd, chdir, mkdir, rename
+from os import system, getcwd, chdir, mkdir, rename, remove
 from shutil import rmtree
 from json import load
 from datetime import datetime
 from http import HTTPStatus
 from logging import info, error
 from Common.config_logging import LoggingConf
+from Config.constants import SUBJECT, MESSAGE
 from Config.settings import CODEHOME, NEXUS_URL, NEXUS_PASSWORD, NEXUS_USER
 from docker import from_env
 from git.repo.base import Repo
 from yaml import dump
+from Common.emailer import Emailer
+from pathlib import Path
 
 __author__ = 'Fernando López'
 
@@ -63,7 +66,6 @@ class SecurityScan(LoggingConf):
 
         path_enablers_file = join(common_directory, 'enablers.json')
         self.path_docker_compose_file = join(common_directory, 'cve_severity_scan.yml')
-        data = ''
 
         if Path(self.path_docker_compose_file).exists() is False:
             info("Getting CVE Severity Scan Compose file from repository...")
@@ -90,7 +92,6 @@ class SecurityScan(LoggingConf):
 
         if Path('docker-bench-security').exists() is False:
             info("Cloning CIS Docker Benchmark content from GitHub...")
-            #system("git clone https://github.com/docker/docker-bench-security.git {}".format(self.verbose))
             Repo.clone_from("https://github.com/docker/docker-bench-security.git", "./docker-bench-security")
 
         if Path('results').exists() is False:
@@ -99,6 +100,7 @@ class SecurityScan(LoggingConf):
 
         self.enablers = data
         self.client = from_env()
+        self.emailer = Emailer()
 
     def __post_data__(self, enabler, folder, filename):
         nexus_url = join(self.NEXUS_URL, '{}/{}/{}')
@@ -132,7 +134,8 @@ class SecurityScan(LoggingConf):
 
         command = "docker-compose -f {} run --rm scanner {} > ./results/{} 2>/dev/null" \
             .format(self.path_docker_compose_file, image, filename)
-        run([command], shell=True, capture_output=False)
+        aux = run([command], shell=True, capture_output=True)
+        info(aux)
 
         # Just to finish, send the data to the nexus instance
         self.__post_data__(enabler=enabler, folder='cve', filename=filename)
@@ -156,24 +159,26 @@ class SecurityScan(LoggingConf):
         chdir(join(current_dir, 'docker-bench-security'))
 
         # docker-bench-security search by default the script/programm ss to work
-        system("touch ss")
-        system("chmod 764 ss")
+        Path('ss').touch(mode=0o764)
 
         # In case of MacOS, change the "sed -r" command by the "sed -E" command
         command = "grep -rnw . -e 'sed -r' | sed 's/:/ /g' | awk '{print $1}'"
         aux = run([command], shell=True, capture_output=True)
+        info(aux)
         aux = aux.stdout.decode().rstrip()
 
         command = "sed -i .bk 's/sed -r/sed -E/g' {}".format(aux)
-        run([command], shell=True, capture_output=True)
+        aux = run([command], shell=True, capture_output=True)
+        info(aux)
 
         command = \
-            "./docker-bench-security.sh  -t {} -c container_images,container_runtime,docker_security_operations {}"\
-                .format(image, self.verbose)
+            "docker-bench-security.sh  -t {} -c container_images,container_runtime,docker_security_operations {}" \
+            .format(image, self.verbose)
 
-        run([command], shell=True, capture_output=False)
+        aux = run([command], shell=True, capture_output=True)
+        info(aux)
 
-        extension = datetime.now().strftime('%Y%m%d_%H%M') + '_bech.json'
+        extension = datetime.now().strftime('%Y%m%d_%H%M') + '_bench.json'
         filename = name + '_' + extension
         filename = filename.replace(" ", "_")
 
@@ -182,7 +187,7 @@ class SecurityScan(LoggingConf):
         # Just to finish, send the data to the nexus instance
         self.__post_data__(enabler=enabler, folder='cis', filename=filename)
 
-        system("rm ss")
+        remove('ss')
         chdir(current_dir)
 
         return filename
@@ -209,6 +214,7 @@ class SecurityScan(LoggingConf):
         :param enabler: list of arguments, specially the enabler to be analysed
         :return:
         """
+        info("Starting analysis ...")
         result_files = list()
 
         if len(enabler) == 0:
@@ -238,7 +244,31 @@ class SecurityScan(LoggingConf):
 
         self.__clean__()
 
+        self.__send_emails__(data=result_files)
+
         return result_files
+
+    def __send_emails__(self, data):
+        def __send__(ge):
+            # Just for now all the emails are sent to fernando, pending to add the email information in the
+            # enablers.json and in future in the scripts to get the data from Google
+            ge['email'] = 'fernando.lopez@fiware.org'
+
+            current_wd = getcwd()
+            if 'results' not in current_wd:
+                chdir(join(current_wd, 'results'))
+
+            subject = SUBJECT.format(ge['name'])
+            message = MESSAGE.format(ge['name'])
+            to = ge['email']
+            attachments = [ge['bench'], ge['clair']]
+
+            self.emailer.send_msg_attachment(to=to,
+                                             subject=subject,
+                                             body=message,
+                                             attachments=attachments)
+
+        list(map(lambda ge: __send__(ge=ge), data))
 
     def __clean__(self):
         """
@@ -271,63 +301,67 @@ class SecurityScan(LoggingConf):
         if directory.exists() is True:
             rmtree(directory)
 
-    def __count_data__(self, data):
-        dat_counts = [{x: data.count(x)} for x in set(data)]
-        dat_counts = dict((key, d[key]) for d in dat_counts for key in d)
+    @staticmethod
+    def summarize(args, files):
+        def print_data(ge, stdout=True):
+            def count_data(items):
+                dat_counts = [{x: items.count(x)} for x in set(items)]
+                dat_counts = dict((key, d[key]) for d in dat_counts for key in d)
 
-        return dat_counts
+                return dat_counts
 
-    def __extract_result__(self, data):
-        desc = data['desc']
-        result = list(map(lambda x: x['result'], data['results']))
+            def extract_result(items):
+                desc = items['desc']
+                result_items = list(map(lambda x: x['result'], items['results']))
 
-        counts = self.__count_data__(result)
+                counts_items = count_data(result_items)
 
-        return {desc: counts}
+                return {desc: counts_items}
 
-    def print_data(self, ge, stdout=True):
-        # String to send the results to the log file
-        output1 = ge['name'] + " - (CVE Severity)"
-        # String to send the results to the usual output screen
-        output2 = '\n{}'.format(ge['name']) + "\n    CVE Severity"
+            # String to send the results to the log file
+            output1 = ge['name'] + " - (CVE Severity)"
+            # String to send the results to the usual output screen
+            output2 = '\n{}'.format(ge['name']) + "\n    CVE Severity"
 
-        with open(ge['clair'], 'r') as fd:
-            data = load(fd)
+            with open(ge['clair'], 'r') as fd:
+                data = load(fd)
 
-        aux = list(map(lambda x: x['severity'], data[0]['vulnerabilities']))
-        counts = self.__count_data__(aux)
+            aux = list(map(lambda x: x['severity'], data[0]['vulnerabilities']))
+            counts = count_data(aux)
 
-        output1 = output1 + ": " + str(counts)
-        aux = dump(counts, default_flow_style=False).replace('\n', '\n\t')
-        output2 = output2 + "\n\t" + aux
-        fd.close()
+            output1 = output1 + ": " + str(counts)
+            aux = dump(counts, default_flow_style=False).replace('\n', '\n\t')
+            output2 = output2 + "\n\t" + aux
+            fd.close()
 
-        info(output1)
+            info(output1)
 
-        output1 = ge['name'] + ' - ' + "(CIS Docker Benchmark)"
-        output2 = output2 + "\n    CIS Docker Benchmark"
+            output1 = ge['name'] + ' - ' + "(CIS Docker Benchmark)"
+            output2 = output2 + "\n    CIS Docker Benchmark"
 
-        with open(ge['bench'], 'r') as fd:
-            data = load(fd)
+            with open(ge['bench'], 'r') as fd:
+                data = load(fd)
 
-        result = list(map(lambda x: self.__extract_result__(x), data['tests']))
-        result = dict((key, d[key]) for d in result for key in d)
+            result = list(map(lambda x: extract_result(x), data['tests']))
+            result = dict((key, d[key]) for d in result for key in d)
 
-        output1 = output1 + ": " + str(result)
-        aux = dump(result, default_flow_style=False).replace('\n', '\n\t')
-        output2 = output2 + "\n\t" + aux
-        fd.close()
+            output1 = output1 + ": " + str(result)
+            aux = dump(result, default_flow_style=False).replace('\n', '\n\t')
+            output2 = output2 + "\n\t" + aux
+            fd.close()
 
-        output2 = output2 + "\n\n ... Finished"
+            output2 = output2 + "\n\n ... Finished"
 
-        info(output1)
+            info(output1)
 
-        if stdout is True:
-            print(output2)
+            if stdout is True:
+                print(output2)
 
-        info("... Finished")
+            info("... Finished")
 
-    def summarize(self, args, files):
-        chdir(join(getcwd(), 'results'))
+        # Starting the summarize method ...
+        current_wd = getcwd()
+        if 'results' not in current_wd:
+            chdir(join(current_wd, 'results'))
 
-        list(map(lambda ge: self.print_data(ge=ge, stdout=args.summarize), files))
+        list(map(lambda ge: print_data(ge=ge, stdout=args.summarize), files))

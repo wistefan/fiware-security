@@ -78,6 +78,14 @@ if Config.sections():
     LOGGING_LEVEL = logging_section['level']
     LOGGING_FILE = logging_section['file']
 
+    # Google data section
+    oauth_section = config_section_map("google")
+    ACCESS_TOKEN = oauth_section['access_token']
+    REFRESH_TOKEN = oauth_section['refresh_token']
+    CLIENT_ID = oauth_section['client_id']
+    CLIENT_SECRET = oauth_section['client_secret']
+    SENDER = oauth_section['sender']
+
 else:
     msg = '\nERROR: There is not defined CONFIG_FILE environment variable ' \
             '\n       pointing to configuration file or there is no management.ini file' \

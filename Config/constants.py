@@ -23,3 +23,21 @@ __author__ = 'fla'
 """
 
 VERBOSE = '2>/dev/null >/dev/null'
+
+MESSAGE = 'Dear FIWARE GE owner,' + \
+          '\n\nHow result of the Security Analysis task force, we have identified' + \
+          '\na set of posible security issues in your FIWARE GE component' + \
+          '\n({}), based on the docker images analysed. We recommend to take' + \
+          '\na deep view on the attached files and try to resolve them as soon' + \
+          '\nas possible.' + \
+          '\n\nThanks in advance for your cooperation!' + \
+          '\n\nKind Regards,' + \
+          '\nFernando'
+
+SUBJECT = '[Security Analysis] Analysis of docker image: {}'
+
+SIGNATURE = '\n\n------------------------' +\
+            '\nFernando Lopez' +\
+            '\nInterim FIWARE Security Analyst'
+
+GOOGLE_ACCOUNTS_BASE_URL = 'https://accounts.google.com'
