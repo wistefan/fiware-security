@@ -1,4 +1,5 @@
 #!/bin/bash
+# set -xv
 
 user="{{ user }}"
 password="{{ password }}"
@@ -33,6 +34,8 @@ redirect_all() {
 }
 
 security_analysis() {
+    echo "Clair Security Scan... "
+
     redirect_all echo "Pulling from "$@"..."
     redirect_all docker pull "$@"
     redirect_all echo
@@ -55,6 +58,8 @@ security_analysis() {
     ret=$?
     redirect_all echo
 
+    # If we execute the analysis for more than one then it only should be executed with the
+    # last component is analysed
     redirect_all echo "Removing docker instances..."
     redirect_all docker-compose down
     redirect_all echo
@@ -69,18 +74,30 @@ security_analysis() {
     fi
 
     # Just to finish, send the data to the nexus instance
-    redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/cve/${filename}
+    # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/cve/${filename}
 
     # Send an email to the owner of the FIWARE GE
 
 }
 
 docker_bench_security() {
-    cd ../docker-bench-security
+    echo "Docker Bench Security Scan... "
+    image=$@
 
-    id=$(docker images | grep -E "$@" | awk -e '{print $3}')
+    cd ./docker-bench-security
 
-    redirect_all ./docker-bench-security.sh  -t "$@" -c container_images,container_runtime,docker_security_operations
+    id=$(docker images | grep -E "${image}" | awk -e '{print $3}')
+
+    redirect_all echo "Creating an instance of the GE ${image}"
+    cmd='.enablers[] | select(.image == "'${image}'") | .compose'
+    compose=$(jq -r "${cmd}" enablers.json)
+    redirect_all echo "Compose: $compose"
+
+    mv docker-compose.yml docker-compose.old
+    wget -q $compose
+    redirect_all docker-compose up
+
+    redirect_all ./docker-bench-security.sh  -c container_images,container_runtime,docker_security_operations
 
     extension="$(date +%Y%m%d_%H%M%S).json"
     filename=$(echo "$@" | awk -F '/' -v a="$extension" '{print $2 a}')
@@ -92,28 +109,34 @@ docker_bench_security() {
     redirect_all docker rmi ${id}
     redirect_all echo
 
-    redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
+    # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
 
     cd ../clair-container-scan
 }
 
 init() {
+    echo "Initialize the scan..."
+
     BASEDIR=$(cd $(dirname "$0") && pwd)
     cd "$BASEDIR"
 
     if [[ ! -f "docker-compose.yml" ]]; then
-        wget -q https://raw.githubusercontent.com/flopezag/fiware-clair/develop/docker/docker-compose.yml
+        wget -q https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/cve_severity_scan.yml
+        mv cve_severity_scan.yml docker-compose.yml
     fi
 
-    if [[ ! -f "enablers.json" ]]; then
-        wget -q https://raw.githubusercontent.com/flopezag/fiware-clair/develop/docker/enablers.json
-    fi
-
-    cd ..
+    # Need to check that the file exist
 
     if [[ ! -d "docker-bench-security" ]]; then
         redirect_all git clone https://github.com/docker/docker-bench-security.git
     fi
+
+    if [[ ! -f "enablers.json" ]]; then
+        wget -q https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/enablers.json
+        cp enablers.json ./docker-bench-security/enablers.json
+    fi
+
+    # Need to check that the file exists
 
     cd "$BASEDIR"
 }

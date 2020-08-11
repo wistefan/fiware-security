@@ -253,7 +253,7 @@
         {
             "name": "Orion Context Broker",
             "image": "fiware/orion:latest",
-            "compose": "https://github.com/telefonicaid/fiware-orion/blob/master/docker/docker-compose.yml"
+            "compose": "https://raw.githubusercontent.com/telefonicaid/fiware-orion/master/docker/docker-compose.yml"
         },
         {
             "name": "Orion-LD",

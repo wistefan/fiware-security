@@ -5,9 +5,68 @@
   apt:
     update_cache: yes
 
-- name: Upgrade packages
+# get a list of packages that have updates
+- name: get list of pending upgrades
+  command: apt-get --simulate dist-upgrade
+  args:
+    warn: false # don't warn us about apt having its own plugin
+  register: apt_simulate
+  changed_when: 0
+
+# pick out list of pending updates from command output
+- name: parse apt-get output to get list of changed packages
+  set_fact:
+    updates: '{{ apt_simulate.stdout_lines | select("match", "^Inst ") | list | splitpart(1, " ") | list | sort }}'
+  changed_when: 0
+
+# tell user about packages being updated
+- name: show pending updates
+  debug:
+    var: updates
+  when: updates.0 is defined
+
+# if a new kernel is incoming, remove old ones to avoid full /boot
+- name: apt-get autoremove
+  command: apt-get -y autoremove
+  args:
+    warn: false
+  when: '"Inst linux-image-" in apt_simulate.stdout'
+  changed_when: 0
+
+# do the actual apt-get dist-upgrade
+- name: apt-get dist-upgrade
   apt:
-    upgrade: dist
+    upgrade: dist # upgrade all packages to latest version
+  register: upgrade_output
+
+# check if we need a reboot
+- name: check if reboot needed
+  stat: path=/var/run/reboot-required
+  register: file_reboot_required
+
+- name: reboot node
+  shell: sleep 2 && shutdown -r now "Reboot triggered by ansible"
+  async: 1
+  poll: 0
+  ignore_errors: true
+  when: file_reboot_required.stat.exists
+
+# poll ssh port until we get a tcp connect
+- name: wait for node to finish booting
+  become: false
+  local_action: wait_for
+      host={{ ansible_ssh_host }}
+      port=22
+      state=started
+      delay=5
+      timeout=600
+  when: file_reboot_required.stat.exists
+
+# give sshd time to start fully
+- name: wait for ssh to start fully
+  pause:
+    seconds: 15
+  when: file_reboot_required.stat.exists
 
 - name: Install apt-transport-https, ca-certificates, software-properties-common, jq, curl and ppa-purge
   apt:

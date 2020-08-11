@@ -112,5 +112,14 @@ venv.bak/
 # Execution results
 ./results/*,json
 
-# Docker configuration files
-./docker/management.ini
+# Tempodal execution terraform files
+deploy/terraform/terraform.tfvars
+deploy/terraform/tf_keypair_sec_scan
+deploy/terraform/.terraform
+
+# Temporal execution ansible files
+deploy/ansible/inventory.ini
+deploy/ansible/tf_keypair_sec_scan
+
+# Temporal local security scan executions
+results
