@@ -34,6 +34,7 @@ redirect_all() {
 }
 
 security_analysis() {
+    echo
     echo "Clair Security Scan... "
 
     redirect_all echo "Pulling from "$@"..."
@@ -81,6 +82,7 @@ security_analysis() {
 }
 
 docker_bench_security() {
+    echo
     echo "Docker Bench Security Scan... "
     image=$@
 
@@ -92,9 +94,11 @@ docker_bench_security() {
     cmd='.enablers[] | select(.image == "'${image}'") | .compose'
     compose=$(jq -r "${cmd}" enablers.json)
     redirect_all echo "Compose: $compose"
+    redirect_all echo
 
     mv docker-compose.yml docker-compose.old
     wget -q $compose
+    redirect_all docker-compose pull
     redirect_all docker-compose up &
 
     # We need to wait until it is ready the docker-compose service
@@ -111,16 +115,13 @@ docker_bench_security() {
     redirect_all echo "Clean up the docker-compose of the testing component"
     redirect_all docker-compose down --rmi all
 
-    redirect_all echo "Clean up the docker image..."
-    redirect_all docker rmi ${id}
-    redirect_all echo
-
     # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
 
-    cd ../clair-container-scan
+    cd ..
 }
 
 init() {
+    echo
     echo "Initialize the scan..."
 
     BASEDIR=$(cd $(dirname "$0") && pwd)
