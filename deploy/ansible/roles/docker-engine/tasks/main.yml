@@ -12,12 +12,15 @@
     warn: false # don't warn us about apt having its own plugin
   register: apt_simulate
   changed_when: 0
+  when: upgrade_system
 
+# This operation is time consuming, I recommend to do only by configuration parameters
 # pick out list of pending updates from command output
 - name: parse apt-get output to get list of changed packages
   set_fact:
     updates: '{{ apt_simulate.stdout_lines | select("match", "^Inst ") | list | splitpart(1, " ") | list | sort }}'
   changed_when: 0
+  when: upgrade_system
 
 # tell user about packages being updated
 - name: show pending updates
@@ -38,6 +41,7 @@
   apt:
     upgrade: dist # upgrade all packages to latest version
   register: upgrade_output
+  when: upgrade_system
 
 # check if we need a reboot
 - name: check if reboot needed
