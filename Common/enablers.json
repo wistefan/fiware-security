@@ -258,7 +258,7 @@
         {
             "name": "Orion-LD",
             "image": "fiware/orion-ld:latest",
-            "compose": ""
+            "compose": "https://raw.githubusercontent.com/FIWARE/context.Orion-LD/develop/docker/docker-compose.yml"
         },
         {
             "name": "QuantumLeap",

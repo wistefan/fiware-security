@@ -61,7 +61,7 @@ security_analysis() {
     # If we execute the analysis for more than one then it only should be executed with the
     # last component is analysed
     redirect_all echo "Removing docker instances..."
-    redirect_all docker-compose down
+    redirect_all docker-compose down --rmi all
     redirect_all echo
 
     line=$(grep 'latest: Pulling from arminc\/clair-db' ${filename})
@@ -95,7 +95,10 @@ docker_bench_security() {
 
     mv docker-compose.yml docker-compose.old
     wget -q $compose
-    redirect_all docker-compose up
+    redirect_all docker-compose up &
+
+    # We need to wait until it is ready the docker-compose service
+    sleep 60
 
     redirect_all ./docker-bench-security.sh  -c container_images,container_runtime,docker_security_operations
 
@@ -104,6 +107,9 @@ docker_bench_security() {
     enabler=$(echo "$@" | awk -F '/' '{print $2}')
 
     mv docker-bench-security.sh.log.json ${filename}
+
+    redirect_all echo "Clean up the docker-compose of the testing component"
+    redirect_all docker-compose down --rmi all
 
     redirect_all echo "Clean up the docker image..."
     redirect_all docker rmi ${id}
@@ -139,6 +145,40 @@ init() {
     # Need to check that the file exists
 
     cd "$BASEDIR"
+}
+
+function print_result {
+  file_clair=$1
+  file_bench=$2
+
+  echo
+  echo "CVE vulnerabilities"
+  echo
+  for a in Unknown Negligible Low Medium High ;
+  do
+    data=$(more $file_clair | jq ".[].vulnerabilities[].severity | select (.==\"${a}\")" | wc -l)
+    echo "    $a  $data"
+  done
+
+  TOTAL=$(more $file_clair  | jq '.[].vulnerabilities | length')
+  echo "    TOTAL: ${TOTAL}"
+
+
+
+
+  echo
+  echo
+  echo "CIS Docker Benchmark (security best practices)"
+  echo
+  for a in PASS INFO NOTE WARN;
+  do
+    data=$(more $file_bench | jq ".tests[].results[].result | select (.==\"${a}\")" | wc -l)
+    echo "    $a  $data"
+  done
+
+  TOTAL=$(more ./docker-bench-security/orion\:latest20200811_190148.json  | jq '.tests[].results | length' | awk '{sum+=$1} END{printf("%d\n",sum)}')
+  echo "    TOTAL: ${TOTAL}"
+  echo
 }
 
 PULL=0

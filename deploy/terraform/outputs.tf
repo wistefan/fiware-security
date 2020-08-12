@@ -1,0 +1,10 @@
+#
+# show the Public and Private IP addresses of the virtual machines
+#
+output "Security_Scan"	{
+	value = "${openstack_compute_floatingip_v2.floating_ip.address} initialized with success"
+}
+
+output "Keypair" {
+	value = openstack_compute_keypair_v2.keypair.private_key
+}
