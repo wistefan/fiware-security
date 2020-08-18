@@ -39,8 +39,8 @@
         {
             "name": "Cygnus",
             "image": "fiware/cygnus-ngsi",
-            "compose": "",
-            "exclude": ""
+            "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-cygnus.yml",
+            "exclude": "mongo"
         },
         {
             "name": "Domibus",
