@@ -232,11 +232,13 @@ init
 if [[ -n $1 ]]; then
     security_analysis "$1"
     docker_bench_security "$1"
+    # anchore analysis: https://docs.anchore.com/current/docs/engine/engine_installation/
 else
-    for ge in `more enablers.json | jq .enablers[].image | sed 's/"//g'`
+    for ge in `more enablers.json | jq .enablers[].name | sed 's/"//g'`
     do
       security_analysis ${ge}
       docker_bench_security ${ge}
+      # anchore analysis: https://docs.anchore.com/current/docs/engine/engine_installation/
       redirect_all echo
       redirect_all echo
     done
