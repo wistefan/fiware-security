@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -xv
+set -xv
 
 user="{{ user }}"
 password="{{ password }}"
@@ -11,7 +11,8 @@ usage() {
     echo " -p : Pull images before running scan"
     echo " -v : verbose output"
     echo
-    echo "[IMAGE_NAME] : (Optional) Docker image file to be analysed."
+    echo "[IMAGE_NAME] : (Optional) FIWARE GE name to be analysed."
+    echo "               It should be present in the enabler.json file."
     echo "               If it is not provided the Docker images are "
     echo "               obtained from the enablers.json file."
     exit 1
@@ -35,69 +36,91 @@ redirect_all() {
 
 security_analysis() {
     echo
-    echo "Clair Security Scan... "
+    echo "Clair CVE Security Scan... "
 
-    redirect_all echo "Pulling from "$@"..."
-    redirect_all docker pull "$@"
-    redirect_all echo
+    enabler=$@
 
-    labels=$(docker inspect --type=image "$@" 2>/dev/null | jq .[].Config.Labels)
+    redirect_all echo "Pulling from "$enabler"..."
 
-    if [[ ${PULL} -eq 1 ]];
-    then
-      redirect_all echo "Pulling Clair content ..."
-      redirect_all docker-compose pull
-      redirect_all echo
-    fi
+    # Get the list of docker images from the enabler.json taking into account the FIWARE GE name
+    cmd='.enablers[] | select(.name == "'${enabler}'") | .image'
+    images=$(jq -r "${cmd}" enablers.json)
 
-    redirect_all echo "Security analysis of "$@" image..."
-    extension="$(date +%Y%m%d_%H%M%S).json"
-    filename=$(echo "$@" | awk -F '/' -v a="$extension" '{print $2 a}')
-    enabler=$(echo "$@" | awk -F '/' '{print $2}')
+    # From the images, we need to iterate for the different values
+    for i in ${images//,/ }
+    do
+        # call your procedure/other scripts here below
+        echo "$i"
 
-    redirect_stderr docker-compose run --rm scanner "$@" > ${filename}
-    ret=$?
-    redirect_all echo
+        redirect_all docker pull "$i"
+        redirect_all echo
 
-    # If we execute the analysis for more than one then it only should be executed with the
-    # last component is analysed
-    redirect_all echo "Removing docker instances..."
-    redirect_all docker-compose down --rmi all
-    redirect_all echo
+        labels=$(docker inspect --type=image "$i" 2>/dev/null | jq .[].Config.Labels)
 
-    line=$(grep 'latest: Pulling from arminc\/clair-db' ${filename})
+        if [[ ${PULL} -eq 1 ]];
+        then
+          redirect_all echo "Pulling Clair content ..."
+          redirect_all docker-compose pull
+          redirect_all echo
+        fi
 
-    # Just for the 1st time...
-    if [[ -n ${line} ]]; then
-	    # Delete first 3 lines of the file due to the first time that it is executed
-	    # it includes 3 extra no needed lines
-	    sed -i '1,3 d' ${filename}
-    fi
+        redirect_all echo "Security analysis of "$i" image..."
+        extension="$(date +%Y%m%d_%H%M%S)-cve.json"
+        # filename=$(echo "$i" | awk -F '/' -v a="$extension" '{print $2 a}')
+        # enabler=$(echo "$i" | awk -F '/' '{print $2}')
 
-    # Just to finish, send the data to the nexus instance
-    # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/cve/${filename}
+        # Extract the name of the docker image
+        short_name=$(echo $i | awk -F '/' '{print $2}' | awk -F ':' '{print $1}')
+        echo "$short_name"
 
-    # Send an email to the owner of the FIWARE GE
+        filename=$(echo "$enabler" | awk  -v a="$extension" -v b="$short_name" '{print $0"-"b"-"a}')
 
+        redirect_stderr docker-compose run --rm scanner "$i" > ${filename}
+        ret=$?
+        redirect_all echo
+
+        # If we execute the analysis for more than one then it only should be executed with the
+        # last component is analysed
+        redirect_all echo "Removing docker instances..."
+        redirect_all docker-compose down --rmi all
+        redirect_all echo
+
+        line=$(grep 'latest: Pulling from arminc\/clair-db' ${filename})
+
+        # Just for the 1st time...
+        if [[ -n ${line} ]]; then
+            # Delete first 3 lines of the file due to the first time that it is executed
+            # it includes 3 extra no needed lines
+            sed -i '1,3 d' ${filename}
+        fi
+
+        # Just to finish, send the data to the nexus instance
+        # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/cve/${filename}
+
+        # Send an email to the owner of the FIWARE GE
+
+    done
 }
 
 docker_bench_security() {
     echo
     echo "Docker Bench Security Scan... "
-    image=$@
+    enabler=$@
 
     cd ./docker-bench-security
 
     id=$(docker images | grep -E "${image}" | awk -e '{print $3}')
 
     redirect_all echo "Creating an instance of the GE ${image}"
-    cmd='.enablers[] | select(.image == "'${image}'") | .compose'
+    cmd='.enablers[] | select(.name == "'${enabler}'") | .compose'
     compose=$(jq -r "${cmd}" enablers.json)
     redirect_all echo "Compose: $compose"
     redirect_all echo
 
     mv docker-compose.yml docker-compose.old
     wget -q $compose
+    compose=$(echo $compose | awk -F '/' '{print $NF}')
+    mv $compose docker-compose.yml
     redirect_all docker-compose pull
     redirect_all docker-compose up &
 
@@ -106,9 +129,9 @@ docker_bench_security() {
 
     redirect_all ./docker-bench-security.sh  -c container_images,container_runtime,docker_security_operations
 
-    extension="$(date +%Y%m%d_%H%M%S).json"
-    filename=$(echo "$@" | awk -F '/' -v a="$extension" '{print $2 a}')
-    enabler=$(echo "$@" | awk -F '/' '{print $2}')
+    extension="$(date +%Y%m%d_%H%M%S)-bench.json"
+    filename="$@-$extension"
+    # enabler=$(echo "$@" | awk -F '/' '{print $2}')
 
     mv docker-bench-security.sh.log.json ${filename}
 
