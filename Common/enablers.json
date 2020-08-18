@@ -189,7 +189,7 @@
         {
             "name": "IoT Agent for SigFox",
             "image": "fiware/sigfox-iotagent",
-            "compose": "",
+            "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-sigfox.yml",
             "exclude": "fiware/orion"
         },
         {
@@ -315,7 +315,7 @@
         {
             "name": "Stellio",
             "image": "stellio/stellio-timescale-postgis:1.7.2-pg11,stellio/stellio-api-gateway:dev,stellio/stellio-entity-service:dev,stellio/stellio-search-service:dev,stellio/stellio-subscription-service:dev",
-            "compose": "https://raw.githubusercontent.com/stellio-hub/stellio-context-broker/develop/docker-compose.yml",
+            "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-stellio.yml",
             "exclude": "confluentinc/cp-zookeeper,confluentinc/cp-kafka,neo4j"
         },
         {
