@@ -3,282 +3,344 @@
         {
             "name": "APInf",
             "image": "apinf/platform",
-            "compose": "xxx"
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "AuthZForce",
             "image": "fiware/authzforce-ce-server",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Business API Ecosystem",
             "image": "fiware/business-api-ecosystem",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Business API Ecosystem - Charging Backend",
             "image": "conwetlab/biz-ecosystem-charging-backend",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Business API Ecosystem - Customer Management",
             "image": "conwetlab/biz-ecosystem-logic-proxy",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Business API Ecosystem - RSS",
             "image": "conwetlab/biz-ecosystem-rss",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Cygnus",
             "image": "fiware/cygnus-ngsi",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Domibus",
             "image": "fiware/domibus-tomcat",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Draco",
             "image": "ging/fiware-draco",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FIWARE's Extended CKAN",
             "image": "fiware/ckan-extended",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Anomaly",
             "image": "fogflow/anomaly",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Broker",
             "image": "fogflow/broker",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Connected Car",
             "image": "fogflow/connectedcar",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Counter",
             "image": "fogflow/counter",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Designer",
             "image": "fogflow/designer",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Discovery",
             "image": "fogflow/discovery",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Dummy",
             "image": "fogflow/dummy",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Face Counter",
             "image": "fogflow/facecounter",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Face Finder",
             "image": "fogflow/facefinder",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Master",
             "image": "fogflow/master",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Node.js",
             "image": "fogflow/nodejs",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Private Site",
             "image": "fogflow/privatesite",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Public Site",
             "image": "fogflow/publicsite",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Recommender",
             "image": "fogflow/recommender",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Sum",
             "image": "fogflow/sum",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "FogFlow - Worker",
             "image": "fogflow/worker",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Idra",
             "image": "idraopendata/idra",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "IoT Agent for JSON",
             "image": "fiware/iotagent-json",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "IoT Agent for Lightweight M2M",
             "image": "fiware/lightweightm2m-iotagent",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "IoT Agent for LoRaWan",
             "image": "fiware/iotagent-lorawan",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "IoT Agent for OPC UA",
             "image": "rdlabengpa/opcuaage",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "IoT Agent for SigFox",
             "image": "fiware/sigfox-iotagent",
-            "compose": ""
+            "compose": "",
+            "exclude": "fiware/orion"
         },
         {
             "name": "IoT Agent for Ultralight",
             "image": "fiware/iotagent-ul",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Keyrock",
             "image": "fiware/idm",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Knowage",
             "image": "knowagelabs/knowage-server-docker",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Kurento",
             "image": "fiware/stream-oriented-kurento",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - Backend for AMD64",
             "image": "openmtc/backend-amd64",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - Backend for ARM",
             "image": "openmtc/backend-arm",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - CSV Injector App for AMD64",
             "image": "openmtc/csv-injector-app-amd64",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - CSV Injector App for ARM",
             "image": "openmtc/csv-injector-app-arm",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - Cul868 IPE for AMD64",
             "image": "openmtc/cul868-ipe-amd64",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - Cul868 IPE for ARM",
             "image": "openmtc/cul868-ipe-arm",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - Gateway for AMD64",
             "image": "openmtc/gateway-amd64",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - Gateway for ARM",
             "image": "openmtc/gateway-arm",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - InfluxDB App for AMD64",
             "image": "openmtc/influxdb-app-amd64",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - InfluxDB App for ARM",
             "image": "openmtc/influxdb-app-arm",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - MQTT Connector App for AMD64",
             "image": "openmtc/mqtt-connector-app-amd64",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - MQTT Connector App for ARM",
             "image": "openmtc/mqtt-connector-app-arm",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - Orion App for AMD64",
             "image": "openmtc/orion-context-broker-app-amd64",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "OpenMTC - Orion App for ARM",
             "image": "openmtc/orion-context-broker-app-arm",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Orion Context Broker",
             "image": "fiware/orion:latest",
-            "compose": "https://raw.githubusercontent.com/telefonicaid/fiware-orion/master/docker/docker-compose.yml"
+            "compose": "https://raw.githubusercontent.com/telefonicaid/fiware-orion/master/docker/docker-compose.yml",
+            "exclude": ""
         },
         {
             "name": "Orion-LD",
             "image": "fiware/orion-ld:latest",
-            "compose": "https://raw.githubusercontent.com/FIWARE/context.Orion-LD/develop/docker/docker-compose.yml"
+            "compose": "https://raw.githubusercontent.com/FIWARE/context.Orion-LD/develop/docker/docker-compose.yml",
+            "exclude": ""
+        },
+        {
+            "name": "Stellio",
+            "image": "stellio/stellio-timescale-postgis:1.7.2-pg11,stellio/stellio-api-gateway:dev,stellio/stellio-entity-service:dev,stellio/stellio-search-service:dev,stellio/stellio-subscription-service:dev",
+            "compose": "https://raw.githubusercontent.com/stellio-hub/stellio-context-broker/develop/docker-compose.yml",
+            "exclude": "confluentinc/cp-zookeeper,confluentinc/cp-kafka,neo4j"
         },
         {
             "name": "QuantumLeap",
             "image": "smartsdk/quantumleap",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "STH-Comet",
             "image": "fiware/sth-comet",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Wilma",
             "image": "fiware/pep-proxy",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         },
         {
             "name": "Wirecloud",
             "image": "Wirecloud/docker-wirecloud",
-            "compose": ""
+            "compose": "",
+            "exclude": ""
         }
     ]
 }
