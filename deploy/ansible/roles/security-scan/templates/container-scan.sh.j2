@@ -95,7 +95,7 @@ security_analysis() {
         fi
 
         # Just to finish, send the data to the nexus instance
-        # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/cve/${filename}
+        # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_clair/${filename}
 
         # Send an email to the owner of the FIWARE GE
 
@@ -138,7 +138,8 @@ docker_bench_security() {
     redirect_all echo "Clean up the docker-compose of the testing component"
     redirect_all docker-compose down --rmi all
 
-    # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
+    # Just to finish, send the data to the nexus instance
+    redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
 
     cd ..
 }
@@ -148,6 +149,7 @@ anchore() {
     echo "Anchore Security Scan... "
     enabler=$@
 
+    redirect_all echo $(pwd)
     cd ./anchore
 
     cmd='.enablers[] | select(.name == "'${enabler}'") | .image'
@@ -160,9 +162,9 @@ anchore() {
         redirect_all echo "$i"
 
         extension="$(date +%Y%m%d_%H%M%S)-anchore.json"
-        filename="$@-$extension"
+        filename="$@-$i-$extension"
 
-        redirect_all docker pull $enabler
+        redirect_all docker pull $i
 
         # Step 1: Start Anchore engine
         redirect_all docker-compose up -d
@@ -180,6 +182,9 @@ anchore() {
 
         # Step 6: Get the list of vulnerabilities
         redirect_stderr docker-compose exec api anchore-cli --json image vuln $i all > ${filename}
+
+        # Just to finish, send the data to the nexus instance
+        redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_anchore/${filename}
     done
 
     # Stop/down the Anchore engine
@@ -208,19 +213,22 @@ init() {
         redirect_all git clone https://github.com/docker/docker-bench-security.git
     fi
 
-    if [[ ! -f "enablers.json" ]]; then
-        wget -q https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/enablers.json
-        cp enablers.json ./docker-bench-security/enablers.json
-    fi
-
-    # Need to check that the file exists
-
     if [[ ! -d "anchore" ]]; then
-        mkdir anchore
+        mkdir ./anchore
         cd anchore
 
         # Download the docker-compose.yaml file and start.
         wget https://docs.anchore.com/current/docs/engine/quickstart/docker-compose.yaml
+
+        cd ..
+    fi
+
+    # Need to check that the file exist
+
+    if [[ ! -f "enablers.json" ]]; then
+        wget -q https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/enablers.json
+        cp enablers.json ./docker-bench-security/enablers.json
+        cp enablers.json ./anchore/enablers.json
     fi
 
     # Need to check that the file exists
@@ -231,9 +239,10 @@ init() {
 function print_result {
   file_clair=$1
   file_bench=$2
+  file_anchore=$3
 
   echo
-  echo "CVE vulnerabilities"
+  echo "CVE Clair vulnerabilities"
   echo
   for a in Unknown Negligible Low Medium High ;
   do
@@ -257,9 +266,27 @@ function print_result {
     echo "    $a  $data"
   done
 
-  TOTAL=$(more ./docker-bench-security/orion\:latest20200811_190148.json  | jq '.tests[].results | length' | awk '{sum+=$1} END{printf("%d\n",sum)}')
+  TOTAL=$(more $file_bench  | jq '.tests[].results | length' | awk '{sum+=$1} END{printf("%d\n",sum)}')
   echo "    TOTAL: ${TOTAL}"
   echo
+
+
+
+
+  echo
+  echo
+  echo "Anchore Security Analysis"
+  echo
+  for a in Critical High Low Medium;
+  do
+    data=$(more $file_anchore | jq ".tests[].results[].result | select (.==\"${a}\")" | wc -l)
+    echo "    $a  $data"
+  done
+
+  TOTAL=$(more $file_anchore  | jq '.vulnerabilities[].severity' | wc -l)
+  echo "    TOTAL: ${TOTAL}"
+  echo
+
 }
 
 PULL=0
