@@ -314,7 +314,7 @@
         },
         {
             "name": "QuantumLeap",
-            "image": "smartsdk/quantumleap",
+            "image": "smartsdk/quantumleap:latest",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-quantumleap.yml",
             "exclude": ""
         },
@@ -338,9 +338,9 @@
         },
         {
             "name": "Wirecloud",
-            "image": "Wirecloud/docker-wirecloud",
-            "compose": "",
-            "exclude": ""
+            "image": "fiware/wirecloud:latest",
+            "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-wirecloud.yml",
+            "exclude": "fiware/idm:latest,postgres,mysql:5.7,elasticsearch:2.4,memcached:1"
         }
     ]
 }
