@@ -125,7 +125,7 @@ docker_bench_security() {
     redirect_all docker-compose up &
 
     # We need to wait until it is ready the docker-compose service
-    sleep 60
+    sleep 120
 
     redirect_all ./docker-bench-security.sh  -c container_images,container_runtime,docker_security_operations
 
