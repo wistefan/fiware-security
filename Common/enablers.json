@@ -333,8 +333,8 @@
         {
             "name": "Wilma",
             "image": "fiware/pep-proxy",
-            "compose": "",
-            "exclude": ""
+            "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-wilma.yml",
+            "exclude": "fiware/idm:latest,mysql:5.7"
         },
         {
             "name": "Wirecloud",
