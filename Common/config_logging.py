@@ -20,7 +20,7 @@ from os.path import exists, join
 from os import mkdir
 from logging import getLogger, Formatter, FileHandler, StreamHandler, ERROR
 from sys import stdout
-from Config.settings import LOGHOME, LOGGING_FILE, LOGGING_LEVEL
+from config.settings import LOGHOME, LOGGING_FILE, LOGGING_LEVEL
 
 __author__ = 'Fernando López'
 

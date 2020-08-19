@@ -26,13 +26,13 @@ from json import load
 from datetime import datetime
 from http import HTTPStatus
 from logging import info, error
-from Common.config_logging import LoggingConf
-from Config.constants import SUBJECT, MESSAGE
-from Config.settings import CODEHOME, NEXUS_URL, NEXUS_PASSWORD, NEXUS_USER
+from common.config_logging import LoggingConf
+from config.constants import SUBJECT, MESSAGE
+from config.settings import CODEHOME, NEXUS_URL, NEXUS_PASSWORD, NEXUS_USER
 from docker import from_env
 from git.repo.base import Repo
 from yaml import dump
-from Common.emailer import Emailer
+from common.emailer import Emailer
 from pathlib import Path
 
 __author__ = 'Fernando López'

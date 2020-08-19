@@ -301,7 +301,7 @@
             "exclude": ""
         },
         {
-            "name": "Orion Context Broker",
+            "name": "Orion",
             "image": "fiware/orion:latest",
             "compose": "https://raw.githubusercontent.com/telefonicaid/fiware-orion/master/docker/docker-compose.yml",
             "exclude": ""
@@ -332,7 +332,7 @@
         },
         {
             "name": "Wilma",
-            "image": "fiware/pep-proxy",
+            "image": "fiware/pep-proxy:latest",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-wilma.yml",
             "exclude": "fiware/idm:latest,mysql:5.7"
         },

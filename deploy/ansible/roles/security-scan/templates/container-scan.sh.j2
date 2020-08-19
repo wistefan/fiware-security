@@ -143,6 +143,53 @@ docker_bench_security() {
     cd ..
 }
 
+anchore() {
+    echo
+    echo "Anchore Security Scan... "
+    enabler=$@
+
+    cd ./anchore
+
+    cmd='.enablers[] | select(.name == "'${enabler}'") | .image'
+    images=$(jq -r "${cmd}" enablers.json)
+
+    # From the images, we need to iterate for the different values
+    for i in ${images//,/ }
+    do
+        # call your procedure/other scripts here below
+        redirect_all echo "$i"
+
+        extension="$(date +%Y%m%d_%H%M%S)-anchore.json"
+        filename="$@-$extension"
+
+        redirect_all docker pull $enabler
+
+        # Step 1: Start Anchore engine
+        redirect_all docker-compose up -d
+
+        # Step 2: Verify service availability
+
+        # Step 3: Wait until the vulnarabilities distionary is download
+        redirect_all docker-compose exec api anchore-cli system wait
+
+        # Step 4: Add the FIWARE Enabler to be analysed
+        redirect_all docker-compose exec api anchore-cli image add $i
+
+        # Step 5: Wait until the analysis is finished (it needs some time)
+        redirect_all docker-compose exec api anchore-cli image wait $i
+
+        # Step 6: Get the list of vulnerabilities
+        redirect_stderr docker-compose exec api anchore-cli --json image vuln $i all > ${filename}
+    done
+
+    # Stop/down the Anchore engine
+    redirect_all docker-compose down --rmi all
+
+    # Clean all docker images
+    redirect_all docker rmi $(docker images -q)
+}
+
+
 init() {
     echo
     echo "Initialize the scan..."
@@ -164,6 +211,16 @@ init() {
     if [[ ! -f "enablers.json" ]]; then
         wget -q https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/enablers.json
         cp enablers.json ./docker-bench-security/enablers.json
+    fi
+
+    # Need to check that the file exists
+
+    if [[ ! -d "anchore" ]]; then
+        mkdir anchore
+        cd anchore
+
+        # Download the docker-compose.yaml file and start.
+        wget https://docs.anchore.com/current/docs/engine/quickstart/docker-compose.yaml
     fi
 
     # Need to check that the file exists
@@ -232,13 +289,13 @@ init
 if [[ -n $1 ]]; then
     security_analysis "$1"
     docker_bench_security "$1"
-    # anchore analysis: https://docs.anchore.com/current/docs/engine/engine_installation/
+    anchore "$1"
 else
     for ge in `more enablers.json | jq .enablers[].name | sed 's/"//g'`
     do
       security_analysis ${ge}
       docker_bench_security ${ge}
-      # anchore analysis: https://docs.anchore.com/current/docs/engine/engine_installation/
+      anchore ${ge}
       redirect_all echo
       redirect_all echo
     done
