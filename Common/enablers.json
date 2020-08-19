@@ -200,9 +200,9 @@
         },
         {
             "name": "Keyrock",
-            "image": "fiware/idm",
-            "compose": "",
-            "exclude": ""
+            "image": "fiware/idm:latest",
+            "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-keyrock.yml",
+            "exclude": "mysql:5.7"
         },
         {
             "name": "Knowage",
