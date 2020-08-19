@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  quantumleap:
+    image: smartsdk/quantumleap
+    ports:
+      - "8668:8668"
+    depends_on:
+      - crate
+    environment:
+      - CRATE_HOST=crate
+      - USE_GEOCODING=True
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOGLEVEL=DEBUG
+
+  crate:
+    image: crate:4.1.4
+    command: crate -Cauth.host_based.enabled=false
+      -Ccluster.name=democluster -Chttp.cors.enabled=true -Chttp.cors.allow-origin="*"
+    ports:
+      # Admin UI
+      - "4200:4200"
+      # Transport protocol
+      - "4300:4300"
+    volumes:
+      - cratedata:/data
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  cratedata:
+  redisdata:
+
+networks:
+    default:
+        driver_opts:
+            com.docker.network.driver.mtu: 1400
