@@ -46,11 +46,13 @@ security_analysis() {
     cmd='.enablers[] | select(.name == "'${enabler}'") | .image'
     images=$(jq -r "${cmd}" enablers.json)
 
+    filename_clair=""
+
     # From the images, we need to iterate for the different values
     for i in ${images//,/ }
     do
         # call your procedure/other scripts here below
-        echo "$i"
+        redirect_all echo "$i"
 
         redirect_all docker pull "$i"
         redirect_all echo
@@ -71,7 +73,7 @@ security_analysis() {
 
         # Extract the name of the docker image
         short_name=$(echo $i | awk -F '/' '{print $2}' | awk -F ':' '{print $1}')
-        echo "$short_name"
+        redirect_all echo "$short_name"
 
         filename=$(echo "$enabler" | awk  -v a="$extension" -v b="$short_name" '{print $0"-"b"-"a}')
 
@@ -95,11 +97,14 @@ security_analysis() {
         fi
 
         # Just to finish, send the data to the nexus instance
-        # redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_clair/${filename}
+        redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_clair/${filename}
 
-        # Send an email to the owner of the FIWARE GE
-
+        # Keep the name of the file to send afterward the email to the owner
+        filename_clair=$filename_clair$(pwd)"/"$filename","
     done
+
+    # We need to remove the last "," from the filename string(s)
+    filename_clair=${filename_clair::-1}
 }
 
 docker_bench_security() {
@@ -120,6 +125,8 @@ docker_bench_security() {
     mv docker-compose.yml docker-compose.old
     wget -q $compose
     compose=$(echo $compose | awk -F '/' '{print $NF}')
+
+    # Could be possible that they are the same names (e.g. Orion)
     mv $compose docker-compose.yml
     redirect_all docker-compose pull
     redirect_all docker-compose up &
@@ -141,6 +148,9 @@ docker_bench_security() {
     # Just to finish, send the data to the nexus instance
     redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
 
+    # Keep the name of the file to send afterward the email to the owner
+    filename_bench=$(pwd)"/"$filename
+
     cd ..
 }
 
@@ -152,6 +162,8 @@ anchore() {
     redirect_all echo $(pwd)
     cd ./anchore
 
+    filename_anchore=""
+
     cmd='.enablers[] | select(.name == "'${enabler}'") | .image'
     images=$(jq -r "${cmd}" enablers.json)
 
@@ -162,7 +174,13 @@ anchore() {
         redirect_all echo "$i"
 
         extension="$(date +%Y%m%d_%H%M%S)-anchore.json"
-        filename="$@-$i-$extension"
+
+        # Extract the name of the docker image
+        short_name=$(echo $i | awk -F '/' '{print $2}' | awk -F ':' '{print $1}')
+        redirect_all echo "$short_name"
+
+        filename=$(echo "$enabler" | awk  -v a="$extension" -v b="$short_name" '{print $0"-"b"-"a}')
+
 
         redirect_all docker pull $i
 
@@ -185,7 +203,13 @@ anchore() {
 
         # Just to finish, send the data to the nexus instance
         redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_anchore/${filename}
+
+        # Keep the name of the file to send afterward the email to the owner
+        filename_anchore=$filename_anchore$(pwd)"/"$filename","
     done
+
+    # We need to remove the last "," from the filename string(s)
+    filename_anchore=${filename_anchore::-1}
 
     # Stop/down the Anchore engine
     redirect_all docker-compose down --rmi all
@@ -234,6 +258,68 @@ init() {
     # Need to check that the file exists
 
     cd "$BASEDIR"
+}
+
+
+function email() {
+  # This function receive 4 parameters
+  # FIWARE GE name
+  # Result file of the Docker Bench Security Scan
+  # Result files of the SAST Clair scan
+  # Result files of the SAST Anchore scan
+
+  enabler_name=$1
+  email_owner=$(jq '.enablers[] | select(.name=="Orion") | .email' enablers.json)
+  bench_file=$2
+  clair_file=$3
+  anchore_file=$4
+
+
+
+  MESSAGE="Dear FIWARE GE owner,
+
+  As a result of the security analysis working group, we have identified
+  a set of possible security issues in your component, based on SAST and
+  Docker Bench Security Analysis. We recommend that you perform a thorough
+  analysis of these results and take appropriate action to resolve the
+  security issues found as soon as possible.
+
+  Thank you in advance for your cooperation...
+
+  Kind Regards,
+  Fernando
+
+  ------------------------
+  Fernando Lopez
+  Interim FIWARE Security Analyst"
+
+
+
+  SUBJECT="[Security Analysis] Analysis of docker image: "$enabler_name
+
+
+
+  echo "$MESSAGE" > /tmp/tmpfile.$$
+
+  email_command="mail
+                 -s \"$SUBJECT\"
+                 -A $bench_file"
+
+  # From the files associated to clair generate -A <file> for the different values
+  for i in ${clair_file//,/ }
+  do
+    email_command=$email_command"  -A $i"
+  done
+
+  # From the files associated to anchore generate -A <file> for the different values
+  for i in ${anchore_file//,/ }
+  do
+    email_command=$email_command"  -A $i"
+  done
+
+  email_command=$email_command"  $email_owner  <  /tmp/tmpfile.$$"
+
+  echo ${email_command}
 }
 
 function print_result {
@@ -317,6 +403,10 @@ if [[ -n $1 ]]; then
     security_analysis "$1"
     docker_bench_security "$1"
     anchore "$1"
+
+    email "$1" ${filename_bench} ${filename_clair} ${filename_anchore}
+    eval $email_command
+    rm /tmp/tmpfile.$$
 else
     for ge in `more enablers.json | jq .enablers[].name | sed 's/"//g'`
     do
