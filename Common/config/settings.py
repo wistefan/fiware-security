@@ -22,7 +22,7 @@ from os import environ
 
 __author__ = 'fla'
 
-__version__ = '1.0.0'
+__version__ = '1.3.0'
 
 
 """
@@ -34,12 +34,12 @@ The configuration `cfg_defaults` are loaded from `cfg_filename`, if file exists 
 Optionally, user can specify the file location manually using an Environment variable called CONFIG_FILE.
 """
 
-name = 'management'
+name = 'FIWARE Security SCAN'
 
 cfg_dir = "/etc/fiware.d"
 
-if environ.get("TF_CONFIG_FILE"):
-    cfg_filename = environ.get("TF_CONFIG_FILE")
+if environ.get("CONFIG_FILE"):
+    cfg_filename = environ.get("CONFIG_FILE")
 
 else:
     cfg_filename = join(cfg_dir, '%s.ini' % name)
@@ -67,15 +67,20 @@ def config_section_map(section):
 
 
 if Config.sections():
-    # Data from openstack section
-    openstack = config_section_map("openstack")
-    USERNAME = openstack['openstack_user_name']
-    TENANT_NAME = openstack['openstack_tenant_name']
-    PASSWORD = openstack['openstack_password']
-    AUTH_URL = openstack['openstack_auth_url']
-    REGION = openstack['openstack_region']
-    DOMAIN_NAME = openstack['openstack_domain_name']
-    FLAVOR = openstack['openstack_flavor']
+    # Logging data section
+    logging_section = config_section_map("logging")
+    LOGGING_LEVEL = logging_section['level']
+    LOGGING_FILE = logging_section['file']
+
+    # Google data section
+    oauth_section = config_section_map("google")
+    ACCESS_TOKEN = oauth_section['access_token']
+    REFRESH_TOKEN = oauth_section['refresh_token']
+    CLIENT_ID = oauth_section['client_id']
+    CLIENT_SECRET = oauth_section['client_secret']
+    SENDER = oauth_section['sender']
+    GOOGLE_ACCOUNTS_BASE_URL = oauth_section['googla_account_base_url']
+
 else:
     msg = '\nERROR: There is not defined CONFIG_FILE environment variable ' \
             '\n       pointing to configuration file or there is no management.ini file' \
@@ -83,3 +88,8 @@ else:
             '\n\n       Please correct at least one of them to execute the program.\n\n\n'
 
     exit(msg)
+
+# Settings file is inside Basics directory, therefore I have to go back to the parent directory
+# to have the Code Home directory
+CODEHOME = dirname(dirname(abspath(__file__)))
+LOGHOME = join(CODEHOME, 'logs')

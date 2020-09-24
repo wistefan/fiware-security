@@ -1,0 +1,13 @@
+version: "3.5"
+
+services:
+
+  # Authzforce is a XACML Server PDP
+  authzforce:
+    image: fiware/authzforce-ce-server:release-8.1.0
+    hostname: authzforce
+    container_name: fiware-authzforce
+    ports:
+      - "8080:8080" # localhost:8080
+    healthcheck:
+      test: curl --fail -s http://authzforce:8080/authzforce-ce/version || exit 1

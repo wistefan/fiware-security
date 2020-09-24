@@ -5,3 +5,10 @@
   roles:
      - docker-engine
      - security-scan
+
+- hosts: secscan
+  become: yes
+  gather_facts: no
+  tags: mail-conf
+  roles:
+     - mailutil

@@ -189,7 +189,7 @@ anchore() {
 
         # Step 2: Verify service availability
 
-        # Step 3: Wait until the vulnarabilities distionary is download
+        # Step 3: Wait until the vulnarabilities dictionary is download
         redirect_all docker-compose exec api anchore-cli system wait
 
         # Step 4: Add the FIWARE Enabler to be analysed
@@ -265,8 +265,17 @@ function email() {
   # This function receive 4 parameters
   # FIWARE GE name
   # Result file of the Docker Bench Security Scan
-  # Result files of the SAST Clair scan
-  # Result files of the SAST Anchore scan
+  # Result files of the Clair scan
+  # Result files of the Anchore scan
+  # Return:
+  #             mail \
+  #                 -s <subject> \
+  #                 -t <destination od the email> \
+  #                 -b <content of the message> \
+  #                 -a <Clair test report> \
+  #                 -a <Anchore test report> \
+  #                 -a <Docker Bench Security report>
+
 
   enabler_name=$1
   email_owner=$(jq '.enablers[] | select(.name=="Orion") | .email' enablers.json)
@@ -278,11 +287,11 @@ function email() {
 
   MESSAGE="Dear FIWARE GE owner,
 
-  As a result of the security analysis working group, we have identified
-  a set of possible security issues in your component, based on SAST and
-  Docker Bench Security Analysis. We recommend that you perform a thorough
-  analysis of these results and take appropriate action to resolve the
-  security issues found as soon as possible.
+  As a result of the security analysis working group, we have identified' \
+  a set of possible security issues in your component, based on Clair,' \
+  Anchore and Docker Bench Security Analysis. We recommend that' \
+  you perform a thorough analysis of these results and take appropriate' \
+  action to resolve the security issues found as soon as possible.' \
 
   Thank you in advance for your cooperation...
 
@@ -305,19 +314,23 @@ function email() {
                  -s \"$SUBJECT\"
                  -A $bench_file"
 
-  # From the files associated to clair generate -A <file> for the different values
+  email_command="mail
+                    -s \"$SUBJECT\"
+                    -t $email_owner
+                    -b /tmp/tmpfile.$$"
+                    -a $bench_file"
+
+  # From the files associated to clair generate -a <file> for the different values
   for i in ${clair_file//,/ }
   do
-    email_command=$email_command"  -A $i"
+    email_command=$email_command"  -a $i"
   done
 
-  # From the files associated to anchore generate -A <file> for the different values
+  # From the files associated to anchore generate -a <file> for the different values
   for i in ${anchore_file//,/ }
   do
-    email_command=$email_command"  -A $i"
+    email_command=$email_command"  -a $i"
   done
-
-  email_command=$email_command"  $email_owner  <  /tmp/tmpfile.$$"
 
   echo ${email_command}
 }
@@ -341,21 +354,25 @@ function print_result {
 
 
 
-
   echo
   echo
   echo "CIS Docker Benchmark (security best practices)"
   echo
-  for a in PASS INFO NOTE WARN;
+  for a in "Container Images and Build File" "Container Runtime" "Docker Security Operations";
   do
-    data=$(more $file_bench | jq ".tests[].results[].result | select (.==\"${a}\")" | wc -l)
-    echo "    $a  $data"
+    echo "    $a"
+    for b in PASS INFO NOTE WARN;
+    do
+      data=$(more $file_bench | jq ".tests[] | select(.desc == \"${a}\") | .results[].result | select (.==\"${b}\")" | wc -l)
+      # data=$(more $file_bench | jq ".tests[].results[].result | select (.==\"${b}\")" | wc -l)
+      echo "        $b  $data"
+    done
   done
-
   TOTAL=$(more $file_bench  | jq '.tests[].results | length' | awk '{sum+=$1} END{printf("%d\n",sum)}')
+
+  echo
   echo "    TOTAL: ${TOTAL}"
   echo
-
 
 
 
@@ -365,14 +382,13 @@ function print_result {
   echo
   for a in Critical High Low Medium;
   do
-    data=$(more $file_anchore | jq ".tests[].results[].result | select (.==\"${a}\")" | wc -l)
+    data=$(more $file_anchore | jq ".vulnerabilities[].severity | select (.==\"${a}\")" | wc -l)
     echo "    $a  $data"
   done
 
   TOTAL=$(more $file_anchore  | jq '.vulnerabilities[].severity' | wc -l)
   echo "    TOTAL: ${TOTAL}"
   echo
-
 }
 
 PULL=0
@@ -407,6 +423,8 @@ if [[ -n $1 ]]; then
     email "$1" ${filename_bench} ${filename_clair} ${filename_anchore}
     eval $email_command
     rm /tmp/tmpfile.$$
+
+    print ${filename_clair} ${filename_bench} ${filename_anchore}
 else
     for ge in `more enablers.json | jq .enablers[].name | sed 's/"//g'`
     do
