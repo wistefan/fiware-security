@@ -121,7 +121,7 @@ deploy/terraform/terraform.tfstate.backup
 
 # Temporal execution ansible files
 deploy/ansible/inventory.ini
-deploy/ansible/tf_keypair_sec_scan
+deploy/ansible/keypair
 
 # Temporal local security scan executions
 results
