@@ -1,0 +1,53 @@
+# -*- encoding: utf-8 -*-
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+##
+# Copyright 2019 FIWARE Foundation, e.V.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+##
+
+[logging]
+# Logging level used in the logging process
+# level: <Logging level, values: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET>
+level: {{ level }}
+
+# Default name of the logging file
+# file: <Name of the log file to be used>
+file: {{ email_logfile }}
+
+[google]
+# My OAuth2 access token
+# access_token: <OAuth2 access token used to send the email through gmail>
+access_token: {{ access_token }}
+
+# My OAuth2 refresh token
+# refresh_token: <OAuth2 refresh token used to refresh the access token>
+refresh_token: {{ refresh_token }}
+
+# The client_id used in my tests
+# client_id: <Google Client ID used to update the access and refresh tokens>
+client_id: {{ client_id }}
+
+# The client_secret of my gmail account
+# client_secret: <Google Client Secret used to update the access and refresh tokens>
+client_secret: {{ client_secret }}
+
+# The email of the account
+# sender: <Sender email (from:) used>
+sender: {{ sender }}
+
+# The url of the google account service
+# google_account_base_url: <base url of the google account>
+google_account_base_url: {{ google_account_base_url }}

@@ -1,0 +1,96 @@
+- name: Install python3.8
+  apt:
+    name: ['python3.8', 'python3-pip']
+    update_cache: yes
+    state: present
+
+- name: Add alias for python3.8 in .bashrc (root user)
+  lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: alias python='/usr/bin/python3.8'
+
+- name: Add alias for python3.8 in .bashrc (ubuntu user)
+  lineinfile:
+    path: /root/.bashrc
+    line: alias python='/usr/bin/python3.8'
+
+#- name: Add alias for python3 in .bashrc
+#  lineinfile:
+#    path: /home/ubuntu/.bashrc
+#    line: alias python3='/usr/bin/python3.8'
+
+- name: Add alias for pip3 in .bashrc (root user)
+  lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: alias pip=pip3
+
+- name: Add alias for pip3 in .bashrc (ubuntu user)
+  lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: alias pip=pip3
+
+#- name: Remove all previous python versions
+#  apt:
+#    name: ['python2.7', 'python2.7-minimal', 'python3.6-minimal']
+#    state: absent
+
+- name: Install software-properties-common
+  apt:
+    name: ['software-properties-common']
+    update_cache: yes
+    state: present
+
+- name: Add python stable repository from PPA and install its signing key on Ubuntu target
+  apt_repository:
+    repo: ppa:deadsnakes/ppa
+
+- name: Update repositories cache
+  apt:
+    update_cache: yes
+
+- name: Create common directory
+  file:
+    path: /home/ubuntu/security-scan/common
+    state: directory
+
+- name: Create config directory
+  file:
+    path: /home/ubuntu/security-scan/common/config
+    state: directory
+
+- name: Insert an export PATH line at the end of the .bashrc file (root user).
+  lineinfile:
+    path: /root/.bashrc
+    line: "export PATH=$PATH:/home/ubuntu/security-scan/common"
+
+- name: Insert an export config mail file line at the end of the .bashrc file (root user).
+  lineinfile:
+    path: /root/.bashrc
+    line: "export CONFIG_FILE=/home/ubuntu/security-scan/common/config/management.ini"
+
+- name: Distribute configuration file for the mail script file
+  template: src=templates/management.ini.j2 dest=/home/ubuntu/security-scan/common/config/management.ini mode=0644
+
+- name: Download config_logging.py
+  get_url:
+    url: https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/config/config_logging.py
+    dest: /home/ubuntu/security-scan/common/config/config_logging.py
+    mode: '0440'
+
+- name: Download settings.py
+  get_url:
+    url: https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/config/settings.py
+    dest: /home/ubuntu/security-scan/common/config/settings.py
+    mode: '0440'
+
+- name: Ansible create init file
+  file:
+    path: /home/ubuntu/security-scan/common/config/__init__.py
+    state: touch
+    mode: '0440'
+
+- name: Download mail script
+  get_url:
+    url: https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/mail
+    dest: /home/ubuntu/security-scan/common/mail
+    mode: '0740'
