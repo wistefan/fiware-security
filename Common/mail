@@ -296,11 +296,6 @@ def init():
                         version='%(prog)s {}'.format(__version__))
 
     args = parser.parse_args()
-    loglevel = None
-    #print(args.log)
-    #print(args.attach)
-    #for f in args.attach:
-    #    print(f)
 
     try:
         loglevel = nameToLevel[args.log.upper()]
@@ -324,13 +319,6 @@ if __name__ == "__main__":
     mailer = Emailer(loglevel=nameToLevel[arguments.log.upper()])
 
     disable_warnings(InsecureRequestWarning)
-
-    # body=arguments.body,
-    # attach=arguments.attach,
-
-    # Read the content of the body
-
-    # mailer.send_msg(to=arguments.to, subject=arguments.subject, body=arguments.body.read())
 
     mailer.send_msg_attachment(to=arguments.to,
                                subject=arguments.subject,

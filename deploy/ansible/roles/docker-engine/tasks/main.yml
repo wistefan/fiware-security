@@ -28,14 +28,6 @@
     var: updates
   when: updates.0 is defined
 
-# if a new kernel is incoming, remove old ones to avoid full /boot
-- name: apt-get autoremove
-  command: apt-get -y autoremove
-  args:
-    warn: false
-  when: '"Inst linux-image-" in apt_simulate.stdout'
-  changed_when: 0
-
 # do the actual apt-get dist-upgrade
 - name: apt-get dist-upgrade
   apt:

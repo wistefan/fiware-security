@@ -317,7 +317,7 @@ function email() {
   email_command="mail
                     -s \"$SUBJECT\"
                     -t $email_owner
-                    -b /tmp/tmpfile.$$"
+                    -b /tmp/tmpfile.$$
                     -a $bench_file"
 
   # From the files associated to clair generate -a <file> for the different values
@@ -380,7 +380,7 @@ function print_result {
   echo
   echo "Anchore Security Analysis"
   echo
-  for a in Critical High Low Medium;
+  for a in Unknown Negligible Low Medium High;
   do
     data=$(more $file_anchore | jq ".vulnerabilities[].severity | select (.==\"${a}\")" | wc -l)
     echo "    $a  $data"
@@ -424,7 +424,7 @@ if [[ -n $1 ]]; then
     eval $email_command
     rm /tmp/tmpfile.$$
 
-    print ${filename_clair} ${filename_bench} ${filename_anchore}
+    print_result ${filename_clair} ${filename_bench} ${filename_anchore}
 else
     for ge in `more enablers.json | jq .enablers[].name | sed 's/"//g'`
     do

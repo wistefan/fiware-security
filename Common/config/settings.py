@@ -79,7 +79,7 @@ if Config.sections():
     CLIENT_ID = oauth_section['client_id']
     CLIENT_SECRET = oauth_section['client_secret']
     SENDER = oauth_section['sender']
-    GOOGLE_ACCOUNTS_BASE_URL = oauth_section['googla_account_base_url']
+    GOOGLE_ACCOUNTS_BASE_URL = oauth_section['google_account_base_url']
 
 else:
     msg = '\nERROR: There is not defined CONFIG_FILE environment variable ' \

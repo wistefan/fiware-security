@@ -2,6 +2,15 @@
 - hosts: secscan
   become: yes
   gather_facts: no
+  tasks:
+    - name: Wait 300 seconds, but only start checking after 60 seconds
+      wait_for_connection:
+        delay: 20
+        sleep: 5
+
+- hosts: secscan
+  become: yes
+  gather_facts: no
   roles:
      - docker-engine
      - security-scan
