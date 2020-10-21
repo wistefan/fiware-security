@@ -222,7 +222,7 @@
             "image": "fiware/sigfox-iotagent",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-sigfox.yml",
             "exclude": "fiware/orion",
-            "email": ""
+            "email": "jason.fox@fiware.org"
         },
         {
             "name": "IoT Agent for Ultralight",
@@ -362,7 +362,7 @@
             "image": "fiware/orion-ld:latest",
             "compose": "https://raw.githubusercontent.com/FIWARE/context.Orion-LD/develop/docker/docker-compose.yml",
             "exclude": "",
-            "email": ""
+            "email": "ken.zangelin@fiware.org"
         },
         {
             "name": "QuantumLeap",
@@ -376,7 +376,7 @@
             "image": "stellio/stellio-timescale-postgis:1.7.2-pg11,stellio/stellio-api-gateway:dev,stellio/stellio-entity-service:dev,stellio/stellio-search-service:dev,stellio/stellio-subscription-service:dev",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-stellio.yml",
             "exclude": "confluentinc/cp-zookeeper,confluentinc/cp-kafka,neo4j",
-            "email": ""
+            "email": "fernando.lopez@fiware.org"
         },
         {
             "name": "STH-Comet",
