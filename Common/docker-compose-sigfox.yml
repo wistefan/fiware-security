@@ -5,7 +5,7 @@ volumes:
 
 services:
     iot-agent:
-        image: fiware/sigfox-iotagent:1.1.0
+        image: telefonicaiot/sigfox-iotagent:latest-distroless   # fiware/sigfox-iotagent:1.1.0
         hostname: iot-agent
         container_name: fiware-iot-agent
         depends_on:
