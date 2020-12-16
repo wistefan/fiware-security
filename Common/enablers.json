@@ -47,7 +47,7 @@
             "image": "fiware/cygnus-ngsi",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-cygnus.yml",
             "exclude": "mongo",
-            "email": ""
+            "email": "fernando.lopez@fiware.org"
         },
         {
             "name": "Domibus",
@@ -58,10 +58,10 @@
         },
         {
             "name": "Draco",
-            "image": "ging/fiware-draco",
-            "compose": "",
+            "image": "ging/fiware-draco:latest",
+            "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-draco.yml",
             "exclude": "",
-            "email": ""
+            "email": "fernando.lopez@fiware.org"
         },
         {
             "name": "FIWARE's Extended CKAN",
@@ -218,8 +218,8 @@
             "email": ""
         },
         {
-            "name": "IoT Agent for SigFox",
-            "image": "fiware/sigfox-iotagent",
+            "name": "IoTAgent-SigFox",
+            "image": "fiware/sigfox-iotagent:latest",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-sigfox.yml",
             "exclude": "fiware/orion",
             "email": "jason.fox@fiware.org"
@@ -236,14 +236,7 @@
             "image": "fiware/idm:latest",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-keyrock.yml",
             "exclude": "mysql:5.7",
-            "email": ""
-        },
-        {
-            "name": "Knowage",
-            "image": "knowagelabs/knowage-server-docker",
-            "compose": "",
-            "exclude": "",
-            "email": ""
+            "email": "fernando.lopez@fiware.org"
         },
         {
             "name": "Kurento",
@@ -369,7 +362,7 @@
             "image": "smartsdk/quantumleap:latest",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-quantumleap.yml",
             "exclude": "",
-            "email": ""
+            "email": "fernando.lopez@fiware.org"
         },
         {
             "name": "Stellio",
@@ -390,14 +383,14 @@
             "image": "fiware/pep-proxy:latest",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-wilma.yml",
             "exclude": "fiware/idm:latest,mysql:5.7",
-            "email": ""
+            "email": "fernando.lopez@fiware.org"
         },
         {
             "name": "Wirecloud",
             "image": "fiware/wirecloud:latest",
             "compose": "https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/docker-compose-wirecloud.yml",
             "exclude": "fiware/idm:latest,postgres,mysql:5.7,elasticsearch:2.4,memcached:1",
-            "email": ""
+            "email": "fernando.lopez@fiware.org"
         }
     ]
 }

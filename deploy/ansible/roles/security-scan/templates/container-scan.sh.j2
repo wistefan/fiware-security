@@ -1,8 +1,11 @@
 #!/bin/bash
-set -xv
+# set -xv
 
 user="{{ user }}"
 password="{{ password }}"
+
+export DOCKER_CLIENT_TIMEOUT=200
+export COMPOSE_HTTP_TIMEOUT=200
 
 usage() {
     echo "Usage: $0 [-pv] [IMAGE_NAME]"

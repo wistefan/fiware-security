@@ -1,8 +1,8 @@
 # Python version: 3.7.0
 # Use 'virtualenv -ppython3.7 env' to define the virtual environment
-requests==2.24.0
-docker==4.3.0
-GitPython==3.1.7
-PyYAML== 5.3.1
-ansible==2.9.12
+requests==2.25.0
+docker==4.4.0
+GitPython==3.1.11
+PyYAML==5.3.1
+ansible==2.10.4
 Jinja2==2.11.2
