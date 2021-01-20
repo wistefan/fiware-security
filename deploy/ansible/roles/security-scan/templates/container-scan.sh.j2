@@ -290,20 +290,16 @@ function email() {
 
   MESSAGE="Dear FIWARE GE owner,
 
-  As a result of the security analysis working group, we have identified' \
-  a set of possible security issues in your component, based on Clair,' \
-  Anchore and Docker Bench Security Analysis. We recommend that' \
-  you perform a thorough analysis of these results and take appropriate' \
-  action to resolve the security issues found as soon as possible.' \
+  As a result of the security analysis working group, we have identified
+  a set of possible security issues in your component, based on Clair,
+  Anchore and Docker Bench Security Analysis. We recommend that
+  you perform a thorough analysis of these results and take appropriate
+  action to resolve the security issues found as soon as possible.
 
   Thank you in advance for your cooperation...
 
   Kind Regards,
-  Fernando
-
-  ------------------------
-  Fernando Lopez
-  Interim FIWARE Security Analyst"
+  Fernando"
 
 
 
@@ -383,7 +379,7 @@ function print_result {
   echo
   echo "Anchore Security Analysis"
   echo
-  for a in Unknown Negligible Low Medium High;
+  for a in Unknown Negligible Low Medium High Critical;
   do
     data=$(more $file_anchore | jq ".vulnerabilities[].severity | select (.==\"${a}\")" | wc -l)
     echo "    $a  $data"
