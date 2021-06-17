@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -xv
+set -xv
 
 user="{{ user }}"
 password="{{ password }}"
@@ -7,7 +7,7 @@ password="{{ password }}"
 export DOCKER_CLIENT_TIMEOUT=200
 export COMPOSE_HTTP_TIMEOUT=200
 
-usage() {
+function usage() {
     echo "Usage: $0 [-pv] [IMAGE_NAME]"
     echo
     echo "Options:"
@@ -21,7 +21,7 @@ usage() {
     exit 1
 }
 
-redirect_stderr() {
+function redirect_stderr() {
     if [[ ${VERBOSE} -eq 1 ]]; then
         "$@"
     else
@@ -29,7 +29,7 @@ redirect_stderr() {
     fi
 }
 
-redirect_all() {
+function redirect_all() {
     if [[ ${VERBOSE} -eq 1 ]]; then
         "$@"
     else
@@ -37,7 +37,7 @@ redirect_all() {
     fi
 }
 
-security_analysis() {
+function security_analysis() {
     echo
     echo "Clair CVE Security Scan... "
 
@@ -84,12 +84,7 @@ security_analysis() {
         ret=$?
         redirect_all echo
 
-        # If we execute the analysis for more than one then it only should be executed with the
-        # last component is analysed
-        redirect_all echo "Removing docker instances..."
-        redirect_all docker-compose down --rmi all
-        redirect_all echo
-
+        # Filtering the line from the result analysis
         line=$(grep 'latest: Pulling from arminc\/clair-db' ${filename})
 
         # Just for the 1st time...
@@ -100,7 +95,7 @@ security_analysis() {
         fi
 
         # Just to finish, send the data to the nexus instance
-        redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_clair/${filename}
+        redirect_all curl -fsSL -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_clair/${filename}
 
         # Keep the name of the file to send afterward the email to the owner
         filename_clair=$filename_clair$(pwd)"/"$filename","
@@ -110,7 +105,7 @@ security_analysis() {
     filename_clair=${filename_clair::-1}
 }
 
-docker_bench_security() {
+function docker_bench_security() {
     echo
     echo "Docker Bench Security Scan... "
     enabler=$@
@@ -130,7 +125,7 @@ docker_bench_security() {
     compose=$(echo $compose | awk -F '/' '{print $NF}')
 
     # Could be possible that they are the same names (e.g. Orion)
-    mv $compose docker-compose.yml
+    mv $compose docker-compose.yml 2>/dev/null
     redirect_all docker-compose pull
     redirect_all docker-compose up &
 
@@ -145,11 +140,8 @@ docker_bench_security() {
 
     mv docker-bench-security.sh.log.json ${filename}
 
-    redirect_all echo "Clean up the docker-compose of the testing component"
-    redirect_all docker-compose down --rmi all
-
     # Just to finish, send the data to the nexus instance
-    redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
+    redirect_all curl -fsSL -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/bench-security/${filename}
 
     # Keep the name of the file to send afterward the email to the owner
     filename_bench=$(pwd)"/"$filename
@@ -157,7 +149,7 @@ docker_bench_security() {
     cd ..
 }
 
-anchore() {
+function anchore() {
     echo
     echo "Anchore Security Scan... "
     enabler=$@
@@ -205,7 +197,8 @@ anchore() {
         redirect_stderr docker-compose exec api anchore-cli --json image vuln $i all > ${filename}
 
         # Just to finish, send the data to the nexus instance
-        redirect_all curl -v -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_anchore/${filename}
+        redirect_all curl -fsSL -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_anchore/${filename}
+        # http -a ${user}:${password} https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_anchore/${filename} < ${filename}
 
         # Keep the name of the file to send afterward the email to the owner
         filename_anchore=$filename_anchore$(pwd)"/"$filename","
@@ -213,16 +206,35 @@ anchore() {
 
     # We need to remove the last "," from the filename string(s)
     filename_anchore=${filename_anchore::-1}
-
-    # Stop/down the Anchore engine
-    redirect_all docker-compose down --rmi all
-
-    # Clean all docker images
-    redirect_all docker rmi $(docker images -q)
 }
 
 
-init() {
+function clean_docker() {
+    # Stop/down the Anchore engine
+    echo "Clean up the Anchore docker-compose engine..."
+    docker-compose down
+    echo
+
+    # Stop/down the Docker-Bench-Analysis engine
+    cd ../docker-bench-security
+    echo "Clean up the Docker-Bench-Security docker-compose engine..."
+    docker-compose down
+    echo
+
+    # Stop/down the Clair engine
+    cd ..
+    echo "Clean up the Clair docker-compose engine..."
+    docker-compose down
+    echo
+
+    # Clean all docker images
+    echo "Clean up all docker images..."
+    docker kill $(docker ps -q) 2>/dev/null
+    docker rmi $(docker images -q)
+}
+
+
+function init() {
     echo
     echo "Initialize the scan..."
 
@@ -294,7 +306,7 @@ function email() {
   a set of possible security issues in your component, based on Clair,
   Anchore and Docker Bench Security Analysis. We recommend that
   you perform a thorough analysis of these results and take appropriate
-  action to resolve the security issues found as soon as possible.
+  actions to resolve the security issues found as soon as possible.
 
   Thank you in advance for your cooperation...
 
@@ -331,6 +343,7 @@ function email() {
     email_command=$email_command"  -a $i"
   done
 
+  echo
   echo ${email_command}
 }
 
@@ -424,6 +437,8 @@ if [[ -n $1 ]]; then
     rm /tmp/tmpfile.$$
 
     print_result ${filename_clair} ${filename_bench} ${filename_anchore}
+
+    clean_docker
 else
     for ge in `more enablers.json | jq .enablers[].name | sed 's/"//g'`
     do
@@ -433,6 +448,8 @@ else
       redirect_all echo
       redirect_all echo
     done
+
+    clean_docker
 fi
 
 exit ${ret}
