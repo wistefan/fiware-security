@@ -112,9 +112,7 @@ function docker_bench_security() {
 
     cd ./docker-bench-security
 
-    id=$(docker images | grep -E "${image}" | awk -e '{print $3}')
-
-    redirect_all echo "Creating an instance of the GE ${image}"
+    redirect_all echo "Creating an instance of the GE ${enabler}"
     cmd='.enablers[] | select(.name == "'${enabler}'") | .compose'
     compose=$(jq -r "${cmd}" enablers.json)
     redirect_all echo "Compose: $compose"
@@ -179,22 +177,14 @@ function anchore() {
 
         redirect_all docker pull $i
 
-        # Step 1: Start Anchore engine
-        redirect_all docker-compose up -d
-
-        # Step 2: Verify service availability
-
-        # Step 3: Wait until the vulnarabilities dictionary is download
-        redirect_all docker-compose exec api anchore-cli system wait
-
         # Step 4: Add the FIWARE Enabler to be analysed
-        redirect_all docker-compose exec api anchore-cli image add $i
+        redirect_all docker-compose -f docker-compose-anchore.yaml exec api anchore-cli image add $i
 
         # Step 5: Wait until the analysis is finished (it needs some time)
-        redirect_all docker-compose exec api anchore-cli image wait $i
+        redirect_all docker-compose -f docker-compose-anchore.yaml exec api anchore-cli image wait $i
 
         # Step 6: Get the list of vulnerabilities
-        redirect_stderr docker-compose exec api anchore-cli --json image vuln $i all > ${filename}
+        redirect_stderr docker-compose -f docker-compose-anchore.yaml exec api anchore-cli --json image vuln $i all > ${filename}
 
         # Just to finish, send the data to the nexus instance
         redirect_all curl -fsSL -u ${user}':'${password} --upload-file ${filename}  https://nexus.lab.fiware.org/repository/security/check/${enabler}/sast_anchore/${filename}
@@ -206,13 +196,16 @@ function anchore() {
 
     # We need to remove the last "," from the filename string(s)
     filename_anchore=${filename_anchore::-1}
+
+    cd ..
 }
 
 
 function clean_docker() {
     # Stop/down the Anchore engine
     echo "Clean up the Anchore docker-compose engine..."
-    docker-compose down
+    cd ./anchore
+    docker-compose -f docker-compose-anchore.yaml down
     echo
 
     # Stop/down the Docker-Bench-Analysis engine
@@ -229,8 +222,9 @@ function clean_docker() {
 
     # Clean all docker images
     echo "Clean up all docker images..."
-    docker kill $(docker ps -q) 2>/dev/null
-    docker rmi $(docker images -q)
+    docker kill $(docker ps --all -q) 2>/dev/null
+    docker rm $(docker ps --all -q) 2>/dev/null
+    docker rmi $(docker images --all -q)
 }
 
 
@@ -254,16 +248,27 @@ function init() {
 
     if [[ ! -d "anchore" ]]; then
         mkdir ./anchore
-        cd anchore
-
-        # Download the docker-compose.yaml file and start.
-        wget https://docs.anchore.com/current/docs/engine/quickstart/docker-compose.yaml
-
-        cd ..
     fi
 
-    # Need to check that the file exist
+    cd anchore
 
+    # Delete tbe current version of the docker-engine of Anchore
+    rm docker-compose-anchore.yaml
+
+    # Download the possible new version of the docker-compose.yaml file
+    wget -q -O docker-compose-anchore.yaml https://engine.anchore.io/docs/quickstart/docker-compose.yaml
+
+    # Step 1: Start Anchore engine
+    redirect_all docker-compose -f docker-compose-anchore.yaml up -d
+
+    # Step 2: Verify service availability
+
+    # Step 3: Wait until the vulnarabilities dictionary is download
+    redirect_all docker-compose -f docker-compose-anchore.yaml exec api anchore-cli system wait
+
+    cd ..
+
+    # Need to check that the file exist
     if [[ ! -f "enablers.json" ]]; then
         wget -q https://raw.githubusercontent.com/flopezag/fiware-clair/develop/Common/enablers.json
         cp enablers.json ./docker-bench-security/enablers.json
@@ -445,8 +450,14 @@ else
       security_analysis ${ge}
       docker_bench_security ${ge}
       anchore ${ge}
-      redirect_all echo
-      redirect_all echo
+      echo
+      echo
+
+      email ${ge} ${filename_bench} ${filename_clair} ${filename_anchore}
+      eval $email_command
+      rm /tmp/tmpfile.$$
+
+      print_result ${filename_clair} ${filename_bench} ${filename_anchore}
     done
 
     clean_docker
