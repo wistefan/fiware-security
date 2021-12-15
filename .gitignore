@@ -125,3 +125,7 @@ deploy/ansible/keypair
 
 # Temporal local security scan executions
 results
+
+# Data analysis of security reports
+./helpers/*.json
+./helpers/*.png
