@@ -110,7 +110,7 @@ venv.bak/
 .idea
 
 # Execution results
-./results/*,json
+./results/*.json
 
 # Tempodal execution terraform files
 deploy/terraform/terraform.tfvars
@@ -126,6 +126,6 @@ deploy/ansible/keypair
 # Temporal local security scan executions
 results
 
-# Data analysis of security reports
+# Data analysis of security reports temporal files
 ./helpers/*.json
 ./helpers/*.png
