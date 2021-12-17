@@ -56,7 +56,8 @@ jobs:
 
       - name: Run compose
         run: |
-          docker-compose -f Common/cve_severity_scan.yml up -d
-          wget https://github.com/arminc/clair-scanner/releases/download/v12/clair-scanner_linux_amd64
-          chmod +x clair-scanner_linux_amd64
-          ./clair-scanner_linux_amd64 ${{ env.IMAGE }}:${{ matrix.orion-version }}
+          wget https://github.com/arminc/clair-scanner/archive/refs/tags/v12.tar.gz
+          tar -xvf v12.tar.gz
+          cd clair-scanner-12
+          chmod +x example-run.sh
+          example-run.sh ${{ env.IMAGE }}:${{ matrix.orion-version }}
