@@ -58,6 +58,8 @@ jobs:
         run: |
           wget https://github.com/arminc/clair-scanner/archive/refs/tags/v12.tar.gz
           tar -xvf v12.tar.gz
+          ls -l
           cd clair-scanner-12
+          ls -l
           chmod +x example-run.sh
           example-run.sh ${{ env.IMAGE }}:${{ matrix.orion-version }}
