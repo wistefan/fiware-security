@@ -66,7 +66,7 @@ function scan() {
   docker run \
     -ti \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "${reports:?}:/reports" \
+    -v "$(pwd):/reports" \
     --rm \
     --network="$(basename "$(pwd)")"_clair-local \
     clair-scanner \
