@@ -1,0 +1,40 @@
+name: Orion-LD scan
+
+on:
+  schedule:
+    # every night at one
+    - cron:  '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  create-version-matrix:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - id: orion-version
+        uses: wistefan/get-releases-by-semver@master
+        with:
+          include: "MINOR"
+          minMinor: "6"
+          versionField: "TAG-NAME"
+          repository: fiware/context.Orion-LD
+
+    outputs:
+      orion-matrix: ${{ steps.orion-version.outputs.releases }}
+
+  vulnerability-scan-claire:
+    needs: create-version-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        orion-version: ${{fromJson(needs.create-version-matrix.outputs.orion-matrix)}}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: execute check
+        run: |
+          docker/container-scan.sh -p fiware/context.Orion-LD:${{ matrix.orion-version }}
+          ls
