@@ -81,6 +81,7 @@ function scan() {
 if scan "${image:?}"; then
   log_success "✨ ${image:?} contains no known vulnerabilities. ✨"
 else
+  cat ${report_file}
   log_error "😱 ${image:?} contains vulnerabilities, details saved to ${report_file:?}. 😱"
   exit 1
 fi
