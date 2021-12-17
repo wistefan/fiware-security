@@ -59,7 +59,7 @@ report_file=$2
 
 trap "scanner_docker_compose down > /dev/null 2>&1" int exit
 
-reports=$(mktemp -d)
+reports=$(pwd)
 
 function scan() {
   local image="${1:?}"
