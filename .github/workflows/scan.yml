@@ -55,13 +55,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Run test
-        continue-on-error: true
         run: |
-          .github/run-clair.sh ${{ env.IMAGE }}:${{ matrix.orion-version }} orion-ld-${{ matrix.orion-version }}.json
-
-      - name: Cat
-        run: |
-          ls -l
-          cat orion-ld-${{ matrix.orion-version }}.json
+          .github/run-clair.sh ${{ env.IMAGE }}:${{ matrix.orion-version }}
           
           

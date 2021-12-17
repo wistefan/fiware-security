@@ -55,18 +55,19 @@ if ! scanner_docker_compose up -d >/dev/null 2>&1; then
   scanner_docker_compose up -d
 fi
 
-report_file=$2
+report_file=$(echo "${image:?}.json" | sed  's/\W/-/g')
 
 trap "scanner_docker_compose down > /dev/null 2>&1" int exit
 
-reports=$(pwd)
+reports=$(mktemp -d)
 
 function scan() {
   local image="${1:?}"
+  docker pull ${image:?}
   docker run \
     -ti \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "$(pwd):/reports" \
+    -v "${reports:?}:/reports" \
     --rm \
     --network="$(basename "$(pwd)")"_clair-local \
     clair-scanner \
@@ -81,8 +82,8 @@ function scan() {
 if scan "${image:?}"; then
   log_success "✨ ${image:?} contains no known vulnerabilities. ✨"
 else
-  ls $(pwd)
-  cat ${report_file}
-  log_error "😱 ${image:?} contains vulnerabilities, details saved to ${report_file:?}. 😱"
+  cat  ${reports:?}/${report_file:?}
+
+  log_error "😱 ${image:?} contains vulnerabilities, details saved to ${reports:?}/${report_file:?}. 😱"
   exit 1
 fi
