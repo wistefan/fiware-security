@@ -53,17 +53,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-        with:
-          repository: 'arminc/clair-scanner'
 
-      - name: Run compose
+      - name: Run test
         continue-on-error: true
         run: |
-          ls -l
-          chmod +x example-run.sh
-          ./example-run.sh ${{ env.IMAGE }}:${{ matrix.orion-version }}
+          .github/run-clair.sh ${{ env.IMAGE }}:${{ matrix.orion-version }} ${{ env.IMAGE }}-${{ matrix.orion-version }}.json
+          cat ${{ env.IMAGE }}-${{ matrix.orion-version }}.json
           
-      - uses: actions/upload-artifact@v2
-        with:
-          name: orion-ld-${{ matrix.orion-version }}
-          path: /tmp/
