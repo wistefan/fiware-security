@@ -6,6 +6,9 @@ on:
     - cron:  '0 1 * * *'
   workflow_dispatch:
 
+env:
+  IMAGE: fiware/orion-ld
+
 jobs:
   create-version-matrix:
     runs-on: ubuntu-latest
@@ -39,4 +42,4 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: fiware/context.Orion-LD:${{ matrix.orion-version }}
+          image: ${{ env.IMAGE }}:${{ matrix.orion-version }}
