@@ -35,7 +35,6 @@ jobs:
         orion-version: ${{fromJson(needs.create-version-matrix.outputs.orion-matrix)}}
 
     steps:
-      - uses: actions/checkout@v2
 
       - name: Run Snyk to check Docker image for vulnerabilities
         uses: snyk/actions/docker@master
@@ -43,3 +42,21 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: ${{ env.IMAGE }}:${{ matrix.orion-version }}
+
+  vulnerability-scan-clair:
+    needs: create-version-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        orion-version: ${{fromJson(needs.create-version-matrix.outputs.orion-matrix)}}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run compose
+        run: |
+          docker-compose -f Common/cve_severity_scan.yml up -d
+          wget https://github.com/arminc/clair-scanner/releases/download/v12/clair-scanner_linux_amd64
+          chmod +x clair-scanner_linux_amd64
+          ./clair-scanner_linux_amd64 ${{ env.IMAGE }}:${{ matrix.orion-version }}

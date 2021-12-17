@@ -17,6 +17,8 @@ services:
             db:
                 condition: service_healthy
         restart: on-failure
+        ports:
+            -   6060:6060
         healthcheck:
             test: nc -z clair 6060 && nc -z clair 6061
             interval: 1s
