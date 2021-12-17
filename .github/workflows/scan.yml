@@ -53,13 +53,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          repository: 'arminc/clair-scanner'
 
       - name: Run compose
         run: |
-          wget https://github.com/arminc/clair-scanner/archive/refs/heads/master.zip
-          unzip master.zip
-          ls -l
-          cd clair-scanner-12
           ls -l
           chmod +x example-run.sh
           example-run.sh ${{ env.IMAGE }}:${{ matrix.orion-version }}
