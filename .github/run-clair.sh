@@ -62,7 +62,7 @@ reports=$(mktemp -d)
 function scan() {
   local image="${1:?}"
   docker network list
-  docker pull image
+  docker pull $image
   docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${reports:?}:/reports" \
