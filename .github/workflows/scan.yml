@@ -60,4 +60,4 @@ jobs:
         run: |
           ls -l
           chmod +x example-run.sh
-          example-run.sh ${{ env.IMAGE }}:${{ matrix.orion-version }}
+          ./example-run.sh ${{ env.IMAGE }}:${{ matrix.orion-version }}
