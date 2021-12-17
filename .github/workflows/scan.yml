@@ -57,7 +57,13 @@ jobs:
           repository: 'arminc/clair-scanner'
 
       - name: Run compose
+        continue-on-error: true
         run: |
           ls -l
           chmod +x example-run.sh
           ./example-run.sh ${{ env.IMAGE }}:${{ matrix.orion-version }}
+          
+      - uses: actions/upload-artifact@v2
+        with:
+          name: orion-ld-${{ matrix.orion-version }}
+          path: /tmp/
