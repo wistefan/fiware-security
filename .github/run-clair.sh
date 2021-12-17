@@ -74,13 +74,14 @@ function scan() {
      while ! curl -q http://clair:6060 > /dev/null 2>&1; do
        sleep 1
      done
-      ./clair-scanner --ip \${HOSTNAME:?} -r ${report_file:?} --clair http://clair:6060 \"${image:?}\"
+      ./clair-scanner --ip \${HOSTNAME:?} -r /reports/${report_file:?} --clair http://clair:6060 \"${image:?}\"
     """
 }
 
 if scan "${image:?}"; then
   log_success "✨ ${image:?} contains no known vulnerabilities. ✨"
 else
+  ls $(pwd)
   cat ${report_file}
   log_error "😱 ${image:?} contains vulnerabilities, details saved to ${report_file:?}. 😱"
   exit 1
