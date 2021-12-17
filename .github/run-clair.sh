@@ -64,7 +64,6 @@ reports=$(mktemp -d)
 function scan() {
   local image="${1:?}"
   docker run \
-    -ti \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${reports:?}:/reports" \
     --rm \
