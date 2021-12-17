@@ -63,7 +63,6 @@ reports=$(mktemp -d)
 
 function scan() {
   local image="${1:?}"
-  docker pull ${image:?}
   docker run \
     -ti \
     -v /var/run/docker.sock:/var/run/docker.sock \
