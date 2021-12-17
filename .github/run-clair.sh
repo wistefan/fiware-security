@@ -62,11 +62,12 @@ reports=$(mktemp -d)
 function scan() {
   local image="${1:?}"
   docker network list
+  docker pull image
   docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${reports:?}:/reports" \
     --rm \
-    --network="$(basename "$(pwd)")"_clair-local \
+    --network=fiware-security_clair-local \
     clair-scanner \
     bash -c """
      while ! curl -q http://clair:6060 > /dev/null 2>&1; do
