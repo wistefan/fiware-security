@@ -58,5 +58,9 @@ jobs:
         continue-on-error: true
         run: |
           .github/run-clair.sh ${{ env.IMAGE }}:${{ matrix.orion-version }} ${{ env.IMAGE }}-${{ matrix.orion-version }}.json
+
+      - name: Cat
+        run: |
           cat ${{ env.IMAGE }}-${{ matrix.orion-version }}.json
+          
           
