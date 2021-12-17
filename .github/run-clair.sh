@@ -1,8 +1,6 @@
 #!/bin/bash
 set -ueo pipefail
 
-cd "$(dirname "$0")"
-
 log_error() { echo -e "\033[0m\033[1;91m${*}\033[0m"; }
 log_success() { echo -e "\033[0m\033[1;92m${*}\033[0m"; }
 
@@ -63,6 +61,7 @@ reports=$(mktemp -d)
 
 function scan() {
   local image="${1:?}"
+  docker network list
   docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${reports:?}:/reports" \
