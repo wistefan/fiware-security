@@ -18,7 +18,7 @@ jobs:
       - id: orion-version
         uses: wistefan/get-releases-by-semver@master
         with:
-          include: "MINOR"
+          include: "PATCH"
           minMinor: "6"
           versionField: "TAG-NAME"
           repository: fiware/context.Orion-LD
